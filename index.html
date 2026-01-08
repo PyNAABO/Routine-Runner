@@ -10,53 +10,63 @@
 
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#0f172a" id="theme-color-meta" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <!-- Rolls Royce Favicon -->
-    <link rel="icon" href="https://iili.io/feGbUzX.png" />
+    <link rel="icon" href="https://iili.io/feNCCNV.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");
 
+      /* Base Variables */
+      :root {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --text-main: #e2e8f0;
+        --text-muted: #94a3b8;
+        --border: #334155;
+        --accent: #059669; /* Emerald 600 */
+      }
+
+      /* Light Mode Overrides */
+      .light-mode {
+        --bg-body: #f1f5f9;
+        --bg-card: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --border: #cbd5e1;
+        --accent: #10b981; /* Emerald 500 */
+      }
+
       body {
         font-family: "Inter", sans-serif;
-        background-color: #0f172a;
-        color: #e2e8f0;
+        background-color: var(--bg-body);
+        color: var(--text-main);
         overscroll-behavior-y: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
+
+      .bg-card-custom {
+        background-color: var(--bg-card);
+      }
+      .text-muted-custom {
+        color: var(--text-muted);
+      }
+      .border-custom {
+        border-color: var(--border);
+      }
+
       .mono {
         font-family: "JetBrains Mono", monospace;
       }
-
-      .task-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .priority-glow {
-        box-shadow: 0 0 30px rgba(234, 179, 8, 0.15);
-        border-color: #eab308;
-      }
-
-      textarea::-webkit-scrollbar {
-        width: 8px;
-      }
-      textarea::-webkit-scrollbar-track {
-        background: #1e293b;
-      }
-      textarea::-webkit-scrollbar-thumb {
-        background: #475569;
-        border-radius: 4px;
-      }
-
       .h-dvh {
         height: 100dvh;
       }
@@ -66,11 +76,27 @@
       .scroll-touch {
         -webkit-overflow-scrolling: touch;
       }
+
+      /* Utils */
+      .task-card {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .priority-glow {
+        box-shadow: 0 0 30px rgba(234, 179, 8, 0.15);
+        border-color: #eab308 !important;
+      }
+
+      /* Toggle Switch */
+      .toggle-checkbox:checked {
+        right: 0;
+        border-color: #10b981;
+      }
+      .toggle-checkbox:checked + .toggle-label {
+        background-color: #10b981;
+      }
     </style>
   </head>
-  <body
-    class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom bg-slate-900"
-  >
+  <body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom">
     <!-- SETUP SCREEN -->
     <div
       id="setup-screen"
@@ -91,7 +117,6 @@
           class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold shadow-lg transition flex justify-center items-center gap-2"
         >
           <span>Save & Connect</span>
-          <i class="fas fa-spinner fa-spin hidden" id="config-spinner"></i>
         </button>
         <p
           id="setup-error"
@@ -107,7 +132,7 @@
     >
       <div class="mb-6 flex flex-col items-center">
         <img
-          src="https://iili.io/feGbUzX.png"
+          src="https://iili.io/feNCCNV.png"
           class="h-24 w-24 object-contain mb-4 drop-shadow-2xl"
           alt="Logo"
         />
@@ -128,29 +153,20 @@
         id="login-error-msg"
         class="text-red-400 text-xs mt-4 hidden text-center max-w-xs"
       ></p>
-      <button
-        id="reset-config-btn"
-        class="mt-8 text-slate-600 text-xs hover:text-slate-400 underline"
-      >
-        Reset Database Config
-      </button>
     </div>
 
     <!-- MAIN APP -->
     <div id="app-screen" class="flex flex-col h-full w-full hidden">
       <!-- HEADER -->
       <header
-        class="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shrink-0 z-30 relative shadow-md"
+        class="flex justify-between items-center p-4 bg-card-custom border-b border-custom shrink-0 z-30 relative shadow-sm transition-colors duration-300"
       >
         <div class="flex items-center gap-3">
           <img
-            src="https://iili.io/feGbUzX.png"
+            src="https://iili.io/feNCCNV.png"
             class="h-8 w-8 object-contain"
             alt="RR Logo"
           />
-          <span class="font-bold tracking-tight text-white hidden sm:block"
-            >Routine Runner</span
-          >
           <div
             class="flex items-center cursor-pointer"
             id="sync-wrapper"
@@ -158,57 +174,158 @@
           >
             <div
               id="sync-indicator"
-              class="w-2 h-2 rounded-full bg-slate-600 mr-2"
+              class="w-2 h-2 rounded-full bg-slate-500 mr-2"
             ></div>
             <span
               id="sync-status"
-              class="text-[10px] text-slate-500 uppercase font-bold transition-opacity duration-300"
+              class="text-[10px] text-muted-custom uppercase font-bold transition-opacity duration-300"
               >Offline</span
             >
           </div>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
           <button
             id="toggle-mode-btn"
-            class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+            class="text-muted-custom hover:text-emerald-500 transition"
           >
             <i class="fas fa-pen"></i>
-            <span class="text-xs ml-1 hidden sm:inline">Edit</span>
+          </button>
+          <button
+            id="settings-btn"
+            class="text-muted-custom hover:text-blue-500 transition"
+          >
+            <i class="fas fa-cog"></i>
           </button>
           <img
             id="user-avatar"
             src=""
-            class="w-8 h-8 rounded-full border border-slate-600"
+            class="w-8 h-8 rounded-full border border-custom hidden sm:block"
             alt="User"
           />
-          <button
-            id="logout-btn"
-            class="text-slate-500 hover:text-red-400 ml-1"
-          >
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
         </div>
       </header>
 
       <!-- CONTENT AREA -->
       <main class="flex-1 relative overflow-hidden">
-        <!-- EDIT MODE -->
+        <!-- SETTINGS VIEW -->
+        <div
+          id="settings-view"
+          class="absolute inset-0 bg-card-custom z-40 transform translate-x-full transition-transform duration-300 flex flex-col p-6 overflow-y-auto"
+        >
+          <div class="flex justify-between items-center mb-8">
+            <h2 class="text-xl font-bold">Settings</h2>
+            <button
+              id="close-settings-btn"
+              class="text-muted-custom hover:text-red-500"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <!-- Theme Toggle -->
+          <div
+            class="flex justify-between items-center mb-6 p-4 border border-custom rounded-xl"
+          >
+            <div class="flex items-center gap-3">
+              <i class="fas fa-moon text-blue-400"></i>
+              <span class="font-medium">Dark Mode</span>
+            </div>
+            <div
+              class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+            >
+              <input
+                type="checkbox"
+                name="toggle"
+                id="theme-toggle"
+                class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+              />
+              <label
+                for="theme-toggle"
+                class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
+              ></label>
+            </div>
+          </div>
+
+          <!-- Auto Advance -->
+          <div
+            class="flex justify-between items-center mb-6 p-4 border border-custom rounded-xl"
+          >
+            <div class="flex items-center gap-3">
+              <i class="fas fa-forward text-emerald-400"></i>
+              <div>
+                <span class="font-medium block">Auto Advance</span>
+                <span class="text-xs text-muted-custom"
+                  >Next task without alarm</span
+                >
+              </div>
+            </div>
+            <div
+              class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+            >
+              <input
+                type="checkbox"
+                name="toggle"
+                id="auto-advance-toggle"
+                class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+              />
+              <label
+                for="auto-advance-toggle"
+                class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
+              ></label>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="space-y-3 mt-auto">
+            <button
+              id="refresh-btn"
+              class="w-full py-3 rounded-lg border border-custom text-muted-custom hover:bg-slate-700/10 font-medium"
+            >
+              <i class="fas fa-sync-alt mr-2"></i> Refresh App
+            </button>
+            <button
+              id="reset-day-btn"
+              class="w-full py-3 rounded-lg border border-custom text-yellow-500 hover:bg-yellow-500/10 font-medium"
+            >
+              <i class="fas fa-redo mr-2"></i> Reset Day Progress
+            </button>
+            <button
+              id="settings-logout-btn"
+              class="w-full py-3 rounded-lg border border-custom text-red-500 hover:bg-red-500/10 font-medium"
+            >
+              <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+            </button>
+            <button
+              id="reset-config-btn"
+              class="w-full py-3 rounded-lg text-xs text-muted-custom underline hover:text-red-400"
+            >
+              Disconnect Database
+            </button>
+          </div>
+
+          <div class="mt-8 text-center">
+            <p class="text-[10px] text-muted-custom mono">
+              ID: <span id="user-id-display">...</span>
+            </p>
+            <p class="text-[10px] text-muted-custom mt-1">
+              v3.0.0 • Rolls Royce Edition
+            </p>
+          </div>
+        </div>
+
+        <!-- EDIT VIEW -->
         <div
           id="edit-view"
-          class="absolute inset-0 bg-slate-900 flex flex-col p-4 transition-transform duration-300 translate-x-full z-20"
+          class="absolute inset-0 bg-card-custom flex flex-col p-4 transition-transform duration-300 translate-x-full z-20"
         >
-          <label
-            class="text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider"
-            >Routine Script</label
-          >
           <textarea
             id="routine-input"
-            class="flex-1 bg-slate-800 text-slate-200 p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-8"
+            class="flex-1 bg-body text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-4 border border-custom"
             spellcheck="false"
-            placeholder="🔕 Alarm Off @05:00&#10;💧 Drink Water&#10;🪥 Brush [2m]&#10;📚 Study: till 07:00"
+            placeholder="Enter routine..."
           ></textarea>
-          <div class="flex justify-between items-center mt-auto">
-            <p class="text-xs text-slate-500">Auto-saves to cloud</p>
+          <div class="flex justify-between items-center">
+            <p class="text-xs text-muted-custom">Auto-saves to cloud</p>
             <button
               id="save-routine-btn"
               class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition"
@@ -218,7 +335,7 @@
           </div>
         </div>
 
-        <!-- RUN MODE -->
+        <!-- RUN VIEW -->
         <div
           id="run-view"
           class="absolute inset-0 overflow-y-auto scroll-touch"
@@ -228,9 +345,9 @@
           >
             <!-- Empty State -->
             <div id="empty-state" class="text-center hidden">
-              <i class="fas fa-wind text-6xl text-slate-700 mb-4"></i>
-              <h2 class="text-xl font-bold text-slate-300">No Routine Set</h2>
-              <p class="text-slate-500 mt-2">Tap "Edit" to build your day.</p>
+              <i class="fas fa-wind text-6xl text-slate-500 mb-4"></i>
+              <h2 class="text-xl font-bold">No Routine Set</h2>
+              <p class="text-muted-custom mt-2">Tap the pen icon to start.</p>
             </div>
 
             <!-- Done State -->
@@ -238,14 +355,8 @@
               <i
                 class="fas fa-trophy text-6xl text-yellow-500 mb-4 animate-bounce"
               ></i>
-              <h2 class="text-2xl font-bold text-white">All Tasks Complete!</h2>
-              <p class="text-slate-400 mt-2">Rest easy, Nabhan.</p>
-              <button
-                id="reset-btn"
-                class="mt-8 px-6 py-2 border border-slate-600 text-slate-400 rounded-full hover:bg-slate-800 transition"
-              >
-                Reset Day
-              </button>
+              <h2 class="text-2xl font-bold">Day Complete</h2>
+              <p class="text-muted-custom mt-2">Discipline is freedom.</p>
             </div>
 
             <!-- Active Task Card -->
@@ -253,9 +364,9 @@
               id="active-task-container"
               class="w-full max-w-md flex flex-col gap-6 hidden"
             >
-              <!-- Progress Bar -->
+              <!-- Progress -->
               <div
-                class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden shrink-0"
+                class="w-full bg-card-custom border border-custom h-1.5 rounded-full overflow-hidden shrink-0"
               >
                 <div
                   id="global-progress"
@@ -266,12 +377,12 @@
               <!-- Main Card -->
               <div
                 id="task-card"
-                class="bg-slate-800 border border-slate-700 rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0"
+                class="bg-card-custom border border-custom rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0"
               >
                 <!-- Wait Overlay -->
                 <div
                   id="wait-overlay"
-                  class="absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center hidden"
+                  class="absolute inset-0 bg-black/90 z-10 flex flex-col items-center justify-center hidden"
                 >
                   <i
                     class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"
@@ -279,12 +390,12 @@
                   <h3 class="text-lg font-bold text-blue-200">
                     Waiting for <span id="wait-target-time">05:00</span>
                   </h3>
-                  <p class="text-slate-500 mono mt-2" id="wait-countdown">
+                  <p class="text-slate-400 mono mt-2" id="wait-countdown">
                     00:00:00
                   </p>
                   <button
                     id="force-start-btn"
-                    class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white"
+                    class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white border border-slate-700"
                   >
                     Force Start
                   </button>
@@ -292,19 +403,20 @@
 
                 <!-- Content -->
                 <div class="mb-6">
-                  <span id="task-icon" class="text-6xl mb-4 block">✅</span>
-                  <h2
-                    id="task-text"
-                    class="text-3xl font-bold text-white leading-tight"
+                  <span
+                    id="task-icon"
+                    class="text-6xl mb-4 block transform hover:scale-110 transition cursor-default"
+                    >✅</span
                   >
+                  <h2 id="task-text" class="text-3xl font-bold leading-tight">
                     Task Name
                   </h2>
                 </div>
 
-                <!-- Timer Display (Dynamic) -->
+                <!-- Timer -->
                 <div id="timer-display" class="hidden mb-6">
                   <div
-                    class="text-5xl font-mono font-bold text-emerald-400 tracking-wider"
+                    class="text-5xl font-mono font-bold text-emerald-500 tracking-wider"
                     id="timer-val"
                   >
                     00:00
@@ -316,43 +428,36 @@
                   </div>
                 </div>
 
-                <!-- Quick Edit Icon -->
+                <!-- Quick Edit -->
                 <button
                   id="quick-edit-btn"
-                  class="absolute top-4 right-4 text-slate-600 hover:text-slate-300 transition p-2"
+                  class="absolute top-4 right-4 text-muted-custom hover:text-blue-500 transition p-2"
                 >
                   <i class="fas fa-pencil-alt text-sm"></i>
                 </button>
               </div>
 
-              <!-- Next Task Preview -->
+              <!-- Next Preview -->
               <div class="text-center opacity-70 shrink-0">
                 <p
-                  class="text-xs text-slate-500 uppercase tracking-widest mb-1"
+                  class="text-[10px] text-muted-custom uppercase tracking-widest mb-1"
                 >
                   Up Next
                 </p>
-                <p
-                  id="next-task-text"
-                  class="text-slate-400 font-medium truncate"
-                >
-                  ...
-                </p>
+                <p id="next-task-text" class="font-medium truncate">...</p>
               </div>
 
               <!-- Controls -->
               <div class="grid grid-cols-5 gap-3 mt-4 shrink-0">
-                <!-- Back Button -->
                 <button
                   id="undo-btn"
-                  class="col-span-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 rounded-xl font-bold transition flex items-center justify-center"
+                  class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition flex items-center justify-center"
                 >
                   <i class="fas fa-undo"></i>
                 </button>
-
                 <button
                   id="skip-btn"
-                  class="col-span-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 rounded-xl font-bold transition"
+                  class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition"
                 >
                   Skip
                 </button>
@@ -371,13 +476,13 @@
               >
                 <button
                   onclick="adjustTimer(60)"
-                  class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400"
+                  class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
                 >
                   +1m
                 </button>
                 <button
                   onclick="adjustTimer(300)"
-                  class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400"
+                  class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
                 >
                   +5m
                 </button>
@@ -391,17 +496,19 @@
     <!-- Quick Edit Modal -->
     <div
       id="quick-edit-modal"
-      class="fixed inset-0 bg-black/80 z-40 hidden flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4"
     >
-      <div class="bg-slate-800 w-full max-w-sm rounded-xl p-4">
-        <h3 class="text-white font-bold mb-2">Fix Current Line</h3>
+      <div
+        class="bg-card-custom border border-custom w-full max-w-sm rounded-xl p-4 shadow-2xl"
+      >
+        <h3 class="font-bold mb-2">Fix Current Line</h3>
         <input
           type="text"
           id="quick-edit-input"
-          class="w-full bg-slate-900 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none mb-4 mono"
+          class="w-full bg-body text-main p-3 rounded-lg border border-custom focus:border-blue-500 outline-none mb-4 mono"
         />
         <div class="flex justify-end gap-2">
-          <button id="cancel-quick-edit" class="px-4 py-2 text-slate-400">
+          <button id="cancel-quick-edit" class="px-4 py-2 text-muted-custom">
             Cancel
           </button>
           <button
@@ -430,11 +537,11 @@
         setDoc,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // --- GLOBAL VARS ---
-      let app, auth, db, user;
+      // CONFIG
       const CONFIG_KEY = "rr_firebase_config";
+      const ALARM_FILE = "iphone_alarm.mp3";
 
-      // --- DOM ELEMENTS ---
+      // DOM
       const screens = {
         setup: document.getElementById("setup-screen"),
         login: document.getElementById("login-screen"),
@@ -443,6 +550,7 @@
       const views = {
         edit: document.getElementById("edit-view"),
         run: document.getElementById("run-view"),
+        settings: document.getElementById("settings-view"),
       };
       const inputs = { routine: document.getElementById("routine-input") };
       const display = {
@@ -458,23 +566,49 @@
         globalProgress: document.getElementById("global-progress"),
         syncStatus: document.getElementById("sync-status"),
         syncIndicator: document.getElementById("sync-indicator"),
+        userId: document.getElementById("user-id-display"),
+      };
+      const toggles = {
+        theme: document.getElementById("theme-toggle"),
+        autoAdvance: document.getElementById("auto-advance-toggle"),
       };
 
-      // --- STATE ---
+      // GLOBAL STATE
       let appState = {
         rawRoutine: "",
         currentTaskIndex: 0,
         tasks: [],
+        settings: {
+          darkMode: true,
+          autoAdvance: false,
+        },
       };
-      let timerInterval = null;
-      let alarmLoopInterval = null;
-      let wakeLock = null;
+      let app, auth, db, user;
+      let timerInterval, alarmLoopInterval, wakeLock;
+      const alarmAudio = new Audio(ALARM_FILE);
+      alarmAudio.loop = true;
 
       // --- INIT ---
       function init() {
-        if ("serviceWorker" in navigator)
+        // Check protocol before registering SW to avoid blob/file errors in preview
+        if (
+          "serviceWorker" in navigator &&
+          (location.protocol === "http:" || location.protocol === "https:")
+        ) {
           navigator.serviceWorker.register("sw.js").catch(console.error);
+        }
 
+        // Load Local Settings
+        const savedSettings = localStorage.getItem("rr_settings");
+        if (savedSettings)
+          appState.settings = {
+            ...appState.settings,
+            ...JSON.parse(savedSettings),
+          };
+
+        applySettings();
+
+        // Load Firebase Config
         const storedConfig = localStorage.getItem(CONFIG_KEY);
         if (storedConfig) {
           try {
@@ -488,6 +622,19 @@
         setupEventListeners();
       }
 
+      function applySettings() {
+        // Theme
+        if (appState.settings.darkMode) {
+          document.body.classList.remove("light-mode");
+          document.getElementById("theme-color-meta").content = "#0f172a";
+        } else {
+          document.body.classList.add("light-mode");
+          document.getElementById("theme-color-meta").content = "#f1f5f9";
+        }
+        toggles.theme.checked = appState.settings.darkMode;
+        toggles.autoAdvance.checked = appState.settings.autoAdvance;
+      }
+
       function initFirebase(config) {
         try {
           app = initializeApp(config);
@@ -498,6 +645,7 @@
             if (u) {
               user = u;
               document.getElementById("user-avatar").src = u.photoURL;
+              display.userId.innerText = u.uid.substring(0, 8) + "...";
               showScreen("app");
               initFirestoreListener();
               requestWakeLock();
@@ -506,13 +654,11 @@
             }
           });
         } catch (e) {
-          alert("Invalid Configuration.");
           localStorage.removeItem(CONFIG_KEY);
           location.reload();
         }
       }
 
-      // --- SYNC ---
       function initFirestoreListener() {
         if (!user) return;
         const docRef = doc(db, "users", user.uid);
@@ -540,8 +686,6 @@
           },
           (error) => {
             showSyncStatus("Error!", "red");
-            if (error.code === "permission-denied")
-              alert("⚠️ Sync Error: Check Firestore Rules.");
           }
         );
       }
@@ -568,7 +712,7 @@
       function showSyncStatus(msg, color) {
         display.syncStatus.innerText =
           msg === "Synced"
-            ? `Last Sync: ${new Date().toLocaleTimeString([], {
+            ? `Synced ${new Date().toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}`
@@ -584,16 +728,16 @@
         }`;
       }
 
-      // --- CORE LOGIC ---
+      // --- LOGIC ---
       function parseRoutine(text) {
-        const lines = text.split("\n"); // Keep all lines to preserve index
+        const lines = text.split("\n");
         return lines
           .map((line, index) => {
-            if (line.trim() === "") return null; // Skip empty but keep index context
+            if (line.trim() === "") return null;
 
-            let type = "standard";
-            let meta = null;
-            let cleanText = line;
+            let type = "standard",
+              meta = null,
+              cleanText = line;
 
             const timeMatch = line.match(/@(\d{1,2}:\d{2})/);
             if (timeMatch) {
@@ -626,7 +770,7 @@
             const emojiMatch = cleanText.match(
               /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
             );
-            const icon = emojiMatch ? emojiMatch[0] : "✅"; // Default Green Tick
+            const icon = emojiMatch ? emojiMatch[0] : "✅";
             const displayText = cleanText.replace(icon, "").trim();
 
             return {
@@ -644,7 +788,7 @@
 
       function parseAndRender() {
         appState.tasks = parseRoutine(appState.rawRoutine);
-        stopAlarmLoop();
+        stopAlarm();
         clearInterval(timerInterval);
 
         // Bounds
@@ -664,7 +808,6 @@
           return;
         }
 
-        // Render Task
         document.getElementById("empty-state").classList.add("hidden");
         document.getElementById("all-done-state").classList.add("hidden");
         document
@@ -681,21 +824,16 @@
           : "Next: Finish Line";
 
         if (task.isHigh) {
-          display.taskCard.classList.add("priority-glow", "border-yellow-500");
-          display.taskText.classList.add("text-yellow-400");
+          display.taskCard.classList.add("priority-glow");
         } else {
-          display.taskCard.classList.remove(
-            "priority-glow",
-            "border-yellow-500"
-          );
-          display.taskText.classList.remove("text-yellow-400");
+          display.taskCard.classList.remove("priority-glow");
         }
 
         display.globalProgress.style.width = `${
           (appState.currentTaskIndex / appState.tasks.length) * 100
         }%`;
 
-        // Reset Views
+        // Views Reset
         display.waitOverlay.classList.add("hidden");
         display.timerBox.classList.add("hidden");
         document.getElementById("timer-controls").classList.add("hidden");
@@ -714,7 +852,7 @@
               if (diff <= 0) {
                 clearInterval(timerInterval);
                 display.waitOverlay.classList.add("hidden");
-                startAlarmLoop(); // Loop alarm
+                triggerCompletion();
               } else {
                 display.waitCount.innerText = formatTime(
                   Math.floor(diff / 1000)
@@ -746,9 +884,19 @@
           updateTimerDisplay(remaining);
           if (remaining <= 0) {
             clearInterval(timerInterval);
-            startAlarmLoop(); // Loop alarm
+            triggerCompletion();
           }
         });
+      }
+
+      function triggerCompletion() {
+        if (appState.settings.autoAdvance) {
+          appState.currentTaskIndex++;
+          saveStateToCloud();
+          parseAndRender();
+        } else {
+          startAlarmLoop();
+        }
       }
 
       function startTimerCheck(cb) {
@@ -756,41 +904,13 @@
         timerInterval = setInterval(cb, 1000);
       }
 
-      // --- ALARM LOOP ---
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
       function startAlarmLoop() {
-        if (alarmLoopInterval) return; // Already looping
-        playAlarm(); // Play immediately
-        alarmLoopInterval = setInterval(playAlarm, 2000); // Repeat every 2s
+        alarmAudio.play().catch((e) => console.log("Audio play blocked", e));
       }
 
-      function stopAlarmLoop() {
-        if (alarmLoopInterval) {
-          clearInterval(alarmLoopInterval);
-          alarmLoopInterval = null;
-        }
-      }
-
-      function playAlarm() {
-        if (audioCtx.state === "suspended") audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "square";
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(
-          880,
-          audioCtx.currentTime + 0.5
-        );
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          audioCtx.currentTime + 0.5
-        );
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
+      function stopAlarm() {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
       }
 
       function updateTimerDisplay(s) {
@@ -803,7 +923,7 @@
       }
 
       window.adjustTimer = (secs) => {
-        stopAlarmLoop(); // Stop alarm if adding time
+        stopAlarm();
         const parts = display.timerVal.innerText.split(":");
         let currentSecs = 0;
         if (parts.length === 3)
@@ -841,8 +961,74 @@
         } catch (err) {}
       }
 
-      // --- EVENTS ---
       function setupEventListeners() {
+        // SETTINGS & NAV
+        document.getElementById("settings-btn").onclick = () =>
+          views.settings.classList.remove("translate-x-full");
+        document.getElementById("close-settings-btn").onclick = () =>
+          views.settings.classList.add("translate-x-full");
+        document.getElementById("toggle-mode-btn").onclick = () =>
+          views.edit.classList.toggle("translate-x-full");
+
+        // ACTIONS
+        document.getElementById("save-routine-btn").onclick = () => {
+          appState.rawRoutine = inputs.routine.value;
+          appState.currentTaskIndex = 0;
+          saveStateToCloud();
+          views.edit.classList.add("translate-x-full");
+          parseAndRender();
+        };
+        document.getElementById("done-btn").onclick = () => {
+          appState.currentTaskIndex++;
+          saveStateToCloud();
+          parseAndRender();
+        };
+        document.getElementById("skip-btn").onclick = () => {
+          appState.currentTaskIndex++;
+          saveStateToCloud();
+          parseAndRender();
+        };
+        document.getElementById("undo-btn").onclick = () => {
+          if (appState.currentTaskIndex > 0) {
+            appState.currentTaskIndex--;
+            saveStateToCloud();
+            parseAndRender();
+          }
+        };
+        document.getElementById("refresh-btn").onclick = () =>
+          location.reload();
+        document.getElementById("reset-day-btn").onclick = () => {
+          if (confirm("Restart day?")) {
+            appState.currentTaskIndex = 0;
+            saveStateToCloud();
+            parseAndRender();
+            views.settings.classList.add("translate-x-full");
+          }
+        };
+        document.getElementById("force-start-btn").onclick = () => {
+          display.waitOverlay.classList.add("hidden");
+          stopAlarm();
+          clearInterval(timerInterval);
+        };
+
+        // SETTINGS TOGGLES
+        toggles.theme.addEventListener("change", (e) => {
+          appState.settings.darkMode = e.target.checked;
+          applySettings();
+          localStorage.setItem(
+            "rr_settings",
+            JSON.stringify(appState.settings)
+          );
+        });
+        toggles.autoAdvance.addEventListener("change", (e) => {
+          appState.settings.autoAdvance = e.target.checked;
+          localStorage.setItem(
+            "rr_settings",
+            JSON.stringify(appState.settings)
+          );
+        });
+
+        // AUTH & CONFIG
         document.getElementById("save-config-btn").onclick = async () => {
           const val = document.getElementById("config-input").value.trim();
           try {
@@ -857,68 +1043,22 @@
             document.getElementById("setup-error").classList.remove("hidden");
           }
         };
-
         document.getElementById("reset-config-btn").onclick = () => {
-          if (confirm("Reset?")) {
+          if (confirm("Disconnect?")) {
             localStorage.removeItem(CONFIG_KEY);
             location.reload();
           }
         };
-        document.getElementById("sync-wrapper").onclick = () =>
-          initFirestoreListener();
         document.getElementById("google-login-btn").onclick = () =>
           signInWithPopup(auth, new GoogleAuthProvider()).catch((e) =>
             alert(e.message)
           );
-        document.getElementById("logout-btn").onclick = () => signOut(auth);
-        document.getElementById("toggle-mode-btn").onclick = () =>
-          views.edit.classList.toggle("translate-x-full");
 
-        document.getElementById("save-routine-btn").onclick = () => {
-          appState.rawRoutine = inputs.routine.value;
-          appState.currentTaskIndex = 0;
-          saveStateToCloud();
-          views.edit.classList.add("translate-x-full");
-          parseAndRender();
-        };
-
-        // DONE
-        document.getElementById("done-btn").onclick = () => {
-          stopAlarmLoop();
-          appState.currentTaskIndex++;
-          saveStateToCloud();
-          parseAndRender();
-        };
-
-        // SKIP
-        document.getElementById("skip-btn").onclick = () => {
-          stopAlarmLoop();
-          appState.currentTaskIndex++;
-          saveStateToCloud();
-          parseAndRender();
-        };
-
-        // UNDO
-        document.getElementById("undo-btn").onclick = () => {
-          stopAlarmLoop();
-          if (appState.currentTaskIndex > 0) {
-            appState.currentTaskIndex--;
-            saveStateToCloud();
-            parseAndRender();
+        // LOGOUT BUTTON IN SETTINGS
+        document.getElementById("settings-logout-btn").onclick = () => {
+          if (confirm("Are you sure you want to sign out?")) {
+            signOut(auth);
           }
-        };
-
-        // FORCE START (Wait Overlay)
-        document.getElementById("force-start-btn").onclick = () => {
-          display.waitOverlay.classList.add("hidden");
-          stopAlarmLoop(); // Just in case
-          clearInterval(timerInterval);
-        };
-
-        document.getElementById("reset-btn").onclick = () => {
-          appState.currentTaskIndex = 0;
-          saveStateToCloud();
-          parseAndRender();
         };
 
         // QUICK EDIT
@@ -931,16 +1071,12 @@
               .classList.remove("hidden");
           }
         };
-
         document.getElementById("cancel-quick-edit").onclick = () =>
           document.getElementById("quick-edit-modal").classList.add("hidden");
-
-        // SAVE QUICK EDIT (FIXED LOGIC)
         document.getElementById("save-quick-edit").onclick = () => {
           const newVal = document.getElementById("quick-edit-input").value;
-          const taskID = appState.tasks[appState.currentTaskIndex].id; // Get original line index
+          const taskID = appState.tasks[appState.currentTaskIndex].id;
           const lines = appState.rawRoutine.split("\n");
-
           if (lines[taskID] !== undefined) {
             lines[taskID] = newVal;
             appState.rawRoutine = lines.join("\n");
