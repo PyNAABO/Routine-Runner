@@ -1,774 +1,960 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Routine Runner</title>
+
+    <!-- PWA Settings -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <!-- Rolls Royce Favicon -->
+    <link rel="icon" href="https://iili.io/feGbUzX.png" />
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #0f172a; 
-            color: #e2e8f0;
-            overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile */
-        }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* Smooth transitions */
-        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        /* Gold Glow for High Priority */
-        .priority-glow {
-            box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
-            border-color: #eab308;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");
 
-        /* Custom Scrollbar for Edit Mode */
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: #1e293b; }
-        textarea::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+        overscroll-behavior-y: none;
+      }
+      .mono {
+        font-family: "JetBrains Mono", monospace;
+      }
 
-        /* Mobile specific adjustments */
-        .h-dvh { height: 100dvh; }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .scroll-touch { -webkit-overflow-scrolling: touch; }
+      .task-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .priority-glow {
+        box-shadow: 0 0 30px rgba(234, 179, 8, 0.15);
+        border-color: #eab308;
+      }
+
+      textarea::-webkit-scrollbar {
+        width: 8px;
+      }
+      textarea::-webkit-scrollbar-track {
+        background: #1e293b;
+      }
+      textarea::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+
+      .h-dvh {
+        height: 100dvh;
+      }
+      .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .scroll-touch {
+        -webkit-overflow-scrolling: touch;
+      }
     </style>
-</head>
-<body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom bg-slate-900">
-
-    <!-- SETUP SCREEN (First Run) -->
-    <div id="setup-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6 hidden">
-        <div class="w-full max-w-md">
-            <h1 class="text-2xl font-bold text-white mb-2">⚙️ Connect Database</h1>
-            <p class="text-slate-400 mb-4 text-sm">Paste your <strong>Firebase Config JSON</strong> OR a <strong>Raw Gist URL</strong> containing the JSON.</p>
-            <textarea id="config-input" class="w-full bg-slate-800 text-emerald-400 font-mono text-xs p-4 rounded-xl h-32 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-700 placeholder-slate-600" placeholder='https://gist.githubusercontent.com/nabhan/.../raw/config.json
-
-OR
-
-{
-  "apiKey": "AIzaSy...",
-  "authDomain": "...",
-  "projectId": "..."
-}'></textarea>
-            <button id="save-config-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold shadow-lg transition flex justify-center items-center gap-2">
-                <span>Save & Connect</span>
-                <i class="fas fa-spinner fa-spin hidden" id="config-spinner"></i>
-            </button>
-            <p id="setup-error" class="text-red-400 text-xs mt-3 text-center hidden">Invalid JSON or URL. Check console.</p>
-        </div>
+  </head>
+  <body
+    class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom bg-slate-900"
+  >
+    <!-- SETUP SCREEN -->
+    <div
+      id="setup-screen"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6 hidden"
+    >
+      <div class="w-full max-w-md">
+        <h1 class="text-2xl font-bold text-white mb-2">⚙️ Connect Database</h1>
+        <p class="text-slate-400 mb-4 text-sm">
+          Paste your <strong>Firebase Config JSON</strong> OR a
+          <strong>Raw Gist URL</strong>.
+        </p>
+        <textarea
+          id="config-input"
+          class="w-full bg-slate-800 text-emerald-400 font-mono text-xs p-4 rounded-xl h-32 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-700 placeholder-slate-600"
+        ></textarea>
+        <button
+          id="save-config-btn"
+          class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold shadow-lg transition flex justify-center items-center gap-2"
+        >
+          <span>Save & Connect</span>
+          <i class="fas fa-spinner fa-spin hidden" id="config-spinner"></i>
+        </button>
+        <p
+          id="setup-error"
+          class="text-red-400 text-xs mt-3 text-center hidden"
+        ></p>
+      </div>
     </div>
 
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6 hidden">
-        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">Routine Runner</h1>
-        <p class="text-slate-400 mb-8 text-center">Sync your discipline across devices.</p>
-        <button id="google-login-btn" class="flex items-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-slate-100 transition shadow-lg active:scale-95">
-            <i class="fab fa-google text-red-500"></i> Continue with Google
-        </button>
-        <p id="login-error-msg" class="text-red-400 text-xs mt-4 hidden text-center max-w-xs"></p>
-        <button id="reset-config-btn" class="mt-8 text-slate-600 text-xs hover:text-slate-400 underline">Reset Database Config</button>
+    <div
+      id="login-screen"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6 hidden"
+    >
+      <div class="mb-6 flex flex-col items-center">
+        <img
+          src="https://iili.io/feGbUzX.png"
+          class="h-24 w-24 object-contain mb-4 drop-shadow-2xl"
+          alt="Logo"
+        />
+        <h1 class="text-4xl font-extrabold text-white tracking-tight">
+          Routine Runner
+        </h1>
+      </div>
+      <p class="text-slate-400 mb-8 text-center max-w-xs">
+        Sync your discipline across devices.
+      </p>
+      <button
+        id="google-login-btn"
+        class="flex items-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-slate-100 transition shadow-lg active:scale-95"
+      >
+        <i class="fab fa-google text-red-500"></i> Continue with Google
+      </button>
+      <p
+        id="login-error-msg"
+        class="text-red-400 text-xs mt-4 hidden text-center max-w-xs"
+      ></p>
+      <button
+        id="reset-config-btn"
+        class="mt-8 text-slate-600 text-xs hover:text-slate-400 underline"
+      >
+        Reset Database Config
+      </button>
     </div>
 
     <!-- MAIN APP -->
     <div id="app-screen" class="flex flex-col h-full w-full hidden">
-        
-        <!-- HEADER -->
-        <header class="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shrink-0 z-30 relative shadow-md">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-check-double text-emerald-400"></i>
-                <span class="font-bold tracking-tight text-white">Runner</span>
-                <div class="flex items-center ml-2 cursor-pointer" id="sync-wrapper" title="Force Sync">
-                    <div id="sync-indicator" class="w-2 h-2 rounded-full bg-slate-600 mr-2"></div>
-                    <span id="sync-status" class="text-[10px] text-slate-500 uppercase font-bold transition-opacity duration-300">Offline</span>
-                </div>
+      <!-- HEADER -->
+      <header
+        class="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shrink-0 z-30 relative shadow-md"
+      >
+        <div class="flex items-center gap-3">
+          <img
+            src="https://iili.io/feGbUzX.png"
+            class="h-8 w-8 object-contain"
+            alt="RR Logo"
+          />
+          <span class="font-bold tracking-tight text-white hidden sm:block"
+            >Routine Runner</span
+          >
+          <div
+            class="flex items-center cursor-pointer"
+            id="sync-wrapper"
+            title="Force Sync"
+          >
+            <div
+              id="sync-indicator"
+              class="w-2 h-2 rounded-full bg-slate-600 mr-2"
+            ></div>
+            <span
+              id="sync-status"
+              class="text-[10px] text-slate-500 uppercase font-bold transition-opacity duration-300"
+              >Offline</span
+            >
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            id="toggle-mode-btn"
+            class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+          >
+            <i class="fas fa-pen"></i>
+            <span class="text-xs ml-1 hidden sm:inline">Edit</span>
+          </button>
+          <img
+            id="user-avatar"
+            src=""
+            class="w-8 h-8 rounded-full border border-slate-600"
+            alt="User"
+          />
+          <button
+            id="logout-btn"
+            class="text-slate-500 hover:text-red-400 ml-1"
+          >
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT AREA -->
+      <main class="flex-1 relative overflow-hidden">
+        <!-- EDIT MODE -->
+        <div
+          id="edit-view"
+          class="absolute inset-0 bg-slate-900 flex flex-col p-4 transition-transform duration-300 translate-x-full z-20"
+        >
+          <label
+            class="text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider"
+            >Routine Script</label
+          >
+          <textarea
+            id="routine-input"
+            class="flex-1 bg-slate-800 text-slate-200 p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-8"
+            spellcheck="false"
+            placeholder="🔕 Alarm Off @05:00&#10;💧 Drink Water&#10;🪥 Brush [2m]&#10;📚 Study: till 07:00"
+          ></textarea>
+          <div class="flex justify-between items-center mt-auto">
+            <p class="text-xs text-slate-500">Auto-saves to cloud</p>
+            <button
+              id="save-routine-btn"
+              class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition"
+            >
+              Save & Run
+            </button>
+          </div>
+        </div>
+
+        <!-- RUN MODE -->
+        <div
+          id="run-view"
+          class="absolute inset-0 overflow-y-auto scroll-touch"
+        >
+          <div
+            class="min-h-full flex flex-col items-center justify-center p-6 pb-24"
+          >
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center hidden">
+              <i class="fas fa-wind text-6xl text-slate-700 mb-4"></i>
+              <h2 class="text-xl font-bold text-slate-300">No Routine Set</h2>
+              <p class="text-slate-500 mt-2">Tap "Edit" to build your day.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button id="toggle-mode-btn" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
-                    <i class="fas fa-pen"></i> <span class="text-xs ml-1 hidden sm:inline">Edit</span>
+
+            <!-- Done State -->
+            <div id="all-done-state" class="text-center hidden">
+              <i
+                class="fas fa-trophy text-6xl text-yellow-500 mb-4 animate-bounce"
+              ></i>
+              <h2 class="text-2xl font-bold text-white">All Tasks Complete!</h2>
+              <p class="text-slate-400 mt-2">Rest easy, Nabhan.</p>
+              <button
+                id="reset-btn"
+                class="mt-8 px-6 py-2 border border-slate-600 text-slate-400 rounded-full hover:bg-slate-800 transition"
+              >
+                Reset Day
+              </button>
+            </div>
+
+            <!-- Active Task Card -->
+            <div
+              id="active-task-container"
+              class="w-full max-w-md flex flex-col gap-6 hidden"
+            >
+              <!-- Progress Bar -->
+              <div
+                class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden shrink-0"
+              >
+                <div
+                  id="global-progress"
+                  class="bg-blue-500 h-full w-0 transition-all duration-500"
+                ></div>
+              </div>
+
+              <!-- Main Card -->
+              <div
+                id="task-card"
+                class="bg-slate-800 border border-slate-700 rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0"
+              >
+                <!-- Wait Overlay -->
+                <div
+                  id="wait-overlay"
+                  class="absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center hidden"
+                >
+                  <i
+                    class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"
+                  ></i>
+                  <h3 class="text-lg font-bold text-blue-200">
+                    Waiting for <span id="wait-target-time">05:00</span>
+                  </h3>
+                  <p class="text-slate-500 mono mt-2" id="wait-countdown">
+                    00:00:00
+                  </p>
+                  <button
+                    id="force-start-btn"
+                    class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white"
+                  >
+                    Force Start
+                  </button>
+                </div>
+
+                <!-- Content -->
+                <div class="mb-6">
+                  <span id="task-icon" class="text-6xl mb-4 block">✅</span>
+                  <h2
+                    id="task-text"
+                    class="text-3xl font-bold text-white leading-tight"
+                  >
+                    Task Name
+                  </h2>
+                </div>
+
+                <!-- Timer Display (Dynamic) -->
+                <div id="timer-display" class="hidden mb-6">
+                  <div
+                    class="text-5xl font-mono font-bold text-emerald-400 tracking-wider"
+                    id="timer-val"
+                  >
+                    00:00
+                  </div>
+                  <div
+                    class="text-xs text-emerald-600/70 font-bold uppercase tracking-widest mt-1"
+                  >
+                    Remaining
+                  </div>
+                </div>
+
+                <!-- Quick Edit Icon -->
+                <button
+                  id="quick-edit-btn"
+                  class="absolute top-4 right-4 text-slate-600 hover:text-slate-300 transition p-2"
+                >
+                  <i class="fas fa-pencil-alt text-sm"></i>
                 </button>
-                <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-slate-600" alt="User">
-                <button id="logout-btn" class="text-slate-500 hover:text-red-400 ml-1"><i class="fas fa-sign-out-alt"></i></button>
+              </div>
+
+              <!-- Next Task Preview -->
+              <div class="text-center opacity-70 shrink-0">
+                <p
+                  class="text-xs text-slate-500 uppercase tracking-widest mb-1"
+                >
+                  Up Next
+                </p>
+                <p
+                  id="next-task-text"
+                  class="text-slate-400 font-medium truncate"
+                >
+                  ...
+                </p>
+              </div>
+
+              <!-- Controls -->
+              <div class="grid grid-cols-5 gap-3 mt-4 shrink-0">
+                <!-- Back Button -->
+                <button
+                  id="undo-btn"
+                  class="col-span-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 rounded-xl font-bold transition flex items-center justify-center"
+                >
+                  <i class="fas fa-undo"></i>
+                </button>
+
+                <button
+                  id="skip-btn"
+                  class="col-span-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 rounded-xl font-bold transition"
+                >
+                  Skip
+                </button>
+                <button
+                  id="done-btn"
+                  class="col-span-3 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/30 active:scale-95 transition"
+                >
+                  DONE
+                </button>
+              </div>
+
+              <!-- Timer Controls -->
+              <div
+                id="timer-controls"
+                class="flex justify-center gap-3 hidden shrink-0"
+              >
+                <button
+                  onclick="adjustTimer(60)"
+                  class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400"
+                >
+                  +1m
+                </button>
+                <button
+                  onclick="adjustTimer(300)"
+                  class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400"
+                >
+                  +5m
+                </button>
+              </div>
             </div>
-        </header>
-
-        <!-- CONTENT AREA -->
-        <main class="flex-1 relative overflow-hidden">
-            
-            <!-- EDIT MODE -->
-            <div id="edit-view" class="absolute inset-0 bg-slate-900 flex flex-col p-4 transition-transform duration-300 translate-x-full z-20">
-                <label class="text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Routine Script</label>
-                <textarea id="routine-input" class="flex-1 bg-slate-800 text-slate-200 p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-8" spellcheck="false" placeholder="🔕 Alarm Off @05:00&#10;💧 Drink Water&#10;🪥 Brush [2m]&#10;📚 Study: till 07:00"></textarea>
-                <div class="flex justify-between items-center mt-auto">
-                    <p class="text-xs text-slate-500">Auto-saves to cloud</p>
-                    <button id="save-routine-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition">
-                        Save & Run
-                    </button>
-                </div>
-            </div>
-
-            <!-- RUN MODE -->
-            <div id="run-view" class="absolute inset-0 overflow-y-auto scroll-touch">
-                <div class="min-h-full flex flex-col items-center justify-center p-6 pb-24">
-                
-                    <!-- Empty State -->
-                    <div id="empty-state" class="text-center hidden">
-                        <i class="fas fa-wind text-6xl text-slate-700 mb-4"></i>
-                        <h2 class="text-xl font-bold text-slate-300">No Routine Set</h2>
-                        <p class="text-slate-500 mt-2">Tap "Edit" to build your day.</p>
-                    </div>
-
-                    <!-- Done State -->
-                    <div id="all-done-state" class="text-center hidden">
-                        <i class="fas fa-trophy text-6xl text-yellow-500 mb-4 animate-bounce"></i>
-                        <h2 class="text-2xl font-bold text-white">All Tasks Complete!</h2>
-                        <p class="text-slate-400 mt-2">Rest easy, Nabhan.</p>
-                        <button id="reset-btn" class="mt-8 px-6 py-2 border border-slate-600 text-slate-400 rounded-full hover:bg-slate-800 transition">Reset Day</button>
-                    </div>
-
-                    <!-- Active Task Card -->
-                    <div id="active-task-container" class="w-full max-w-md flex flex-col gap-6 hidden">
-                        
-                        <!-- Progress Bar -->
-                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden shrink-0">
-                            <div id="global-progress" class="bg-blue-500 h-full w-0 transition-all duration-500"></div>
-                        </div>
-
-                        <!-- Main Card -->
-                        <div id="task-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0">
-                            
-                            <!-- Wait Overlay (for @HH:MM tasks) -->
-                            <div id="wait-overlay" class="absolute inset-0 bg-slate-900/95 z-10 flex flex-col items-center justify-center hidden">
-                                <i class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"></i>
-                                <h3 class="text-lg font-bold text-blue-200">Waiting for <span id="wait-target-time">05:00</span></h3>
-                                <p class="text-slate-500 mono mt-2" id="wait-countdown">00:00:00</p>
-                            </div>
-
-                            <!-- Content -->
-                            <div class="mb-6">
-                                <span id="task-icon" class="text-6xl mb-4 block">📝</span>
-                                <h2 id="task-text" class="text-3xl font-bold text-white leading-tight">Task Name</h2>
-                            </div>
-
-                            <!-- Timer Display (Dynamic) -->
-                            <div id="timer-display" class="hidden mb-6">
-                                <div class="text-5xl font-mono font-bold text-emerald-400 tracking-wider" id="timer-val">00:00</div>
-                                <div class="text-xs text-emerald-600/70 font-bold uppercase tracking-widest mt-1">Remaining</div>
-                            </div>
-
-                            <!-- Quick Edit Icon -->
-                            <button id="quick-edit-btn" class="absolute top-4 right-4 text-slate-600 hover:text-slate-300 transition p-2">
-                                <i class="fas fa-pencil-alt text-sm"></i>
-                            </button>
-                        </div>
-
-                        <!-- Next Task Preview -->
-                        <div class="text-center opacity-70 shrink-0">
-                            <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Up Next</p>
-                            <p id="next-task-text" class="text-slate-400 font-medium truncate">...</p>
-                        </div>
-
-                        <!-- Controls -->
-                        <div class="grid grid-cols-4 gap-3 mt-4 shrink-0">
-                            <button id="skip-btn" class="col-span-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 rounded-xl font-bold transition">Skip</button>
-                            <button id="done-btn" class="col-span-3 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/30 active:scale-95 transition">DONE</button>
-                        </div>
-
-                        <!-- Timer Controls (Visible only when timer active) -->
-                        <div id="timer-controls" class="flex justify-center gap-3 hidden shrink-0">
-                            <button onclick="adjustTimer(60)" class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400">+1m</button>
-                            <button onclick="adjustTimer(300)" class="px-3 py-1 rounded bg-slate-800 text-xs text-slate-400">+5m</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+          </div>
+        </div>
+      </main>
     </div>
 
     <!-- Quick Edit Modal -->
-    <div id="quick-edit-modal" class="fixed inset-0 bg-black/80 z-40 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-800 w-full max-w-sm rounded-xl p-4">
-            <h3 class="text-white font-bold mb-2">Fix Current Line</h3>
-            <input type="text" id="quick-edit-input" class="w-full bg-slate-900 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none mb-4 mono">
-            <div class="flex justify-end gap-2">
-                <button id="cancel-quick-edit" class="px-4 py-2 text-slate-400">Cancel</button>
-                <button id="save-quick-edit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Update</button>
-            </div>
+    <div
+      id="quick-edit-modal"
+      class="fixed inset-0 bg-black/80 z-40 hidden flex items-center justify-center p-4"
+    >
+      <div class="bg-slate-800 w-full max-w-sm rounded-xl p-4">
+        <h3 class="text-white font-bold mb-2">Fix Current Line</h3>
+        <input
+          type="text"
+          id="quick-edit-input"
+          class="w-full bg-slate-900 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none mb-4 mono"
+        />
+        <div class="flex justify-end gap-2">
+          <button id="cancel-quick-edit" class="px-4 py-2 text-slate-400">
+            Cancel
+          </button>
+          <button
+            id="save-quick-edit"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
+            Update
+          </button>
         </div>
+      </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInWithPopup,
+        GoogleAuthProvider,
+        onAuthStateChanged,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        onSnapshot,
+        setDoc,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- GLOBAL VARS ---
-        let app, auth, db, user;
-        const CONFIG_KEY = 'rr_firebase_config';
+      // --- GLOBAL VARS ---
+      let app, auth, db, user;
+      const CONFIG_KEY = "rr_firebase_config";
 
-        // --- DOM ELEMENTS ---
-        const screens = { 
-            setup: document.getElementById('setup-screen'),
-            login: document.getElementById('login-screen'), 
-            app: document.getElementById('app-screen') 
-        };
-        const views = { edit: document.getElementById('edit-view'), run: document.getElementById('run-view') };
-        const inputs = { routine: document.getElementById('routine-input') };
-        const display = {
-            taskCard: document.getElementById('task-card'),
-            taskText: document.getElementById('task-text'),
-            taskIcon: document.getElementById('task-icon'),
-            nextTask: document.getElementById('next-task-text'),
-            timerBox: document.getElementById('timer-display'),
-            timerVal: document.getElementById('timer-val'),
-            waitOverlay: document.getElementById('wait-overlay'),
-            waitTarget: document.getElementById('wait-target-time'),
-            waitCount: document.getElementById('wait-countdown'),
-            globalProgress: document.getElementById('global-progress'),
-            syncStatus: document.getElementById('sync-status'),
-            syncIndicator: document.getElementById('sync-indicator')
-        };
+      // --- DOM ELEMENTS ---
+      const screens = {
+        setup: document.getElementById("setup-screen"),
+        login: document.getElementById("login-screen"),
+        app: document.getElementById("app-screen"),
+      };
+      const views = {
+        edit: document.getElementById("edit-view"),
+        run: document.getElementById("run-view"),
+      };
+      const inputs = { routine: document.getElementById("routine-input") };
+      const display = {
+        taskCard: document.getElementById("task-card"),
+        taskText: document.getElementById("task-text"),
+        taskIcon: document.getElementById("task-icon"),
+        nextTask: document.getElementById("next-task-text"),
+        timerBox: document.getElementById("timer-display"),
+        timerVal: document.getElementById("timer-val"),
+        waitOverlay: document.getElementById("wait-overlay"),
+        waitTarget: document.getElementById("wait-target-time"),
+        waitCount: document.getElementById("wait-countdown"),
+        globalProgress: document.getElementById("global-progress"),
+        syncStatus: document.getElementById("sync-status"),
+        syncIndicator: document.getElementById("sync-indicator"),
+      };
 
-        // --- STATE ---
-        let appState = {
-            rawRoutine: "",
-            currentTaskIndex: 0,
-            tasks: [],
-            timerEnd: null // timestamp for current timer
-        };
-        let timerInterval = null;
-        let wakeLock = null;
+      // --- STATE ---
+      let appState = {
+        rawRoutine: "",
+        currentTaskIndex: 0,
+        tasks: [],
+      };
+      let timerInterval = null;
+      let alarmLoopInterval = null;
+      let wakeLock = null;
 
-        // --- INIT ---
-        function init() {
-            const storedConfig = localStorage.getItem(CONFIG_KEY);
-            if (storedConfig) {
-                try {
-                    const config = JSON.parse(storedConfig);
-                    initFirebase(config);
-                } catch (e) {
-                    console.error("Config Parse Error", e);
-                    showScreen('setup');
-                }
+      // --- INIT ---
+      function init() {
+        if ("serviceWorker" in navigator)
+          navigator.serviceWorker.register("sw.js").catch(console.error);
+
+        const storedConfig = localStorage.getItem(CONFIG_KEY);
+        if (storedConfig) {
+          try {
+            initFirebase(JSON.parse(storedConfig));
+          } catch (e) {
+            showScreen("setup");
+          }
+        } else {
+          showScreen("setup");
+        }
+        setupEventListeners();
+      }
+
+      function initFirebase(config) {
+        try {
+          app = initializeApp(config);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          onAuthStateChanged(auth, (u) => {
+            if (u) {
+              user = u;
+              document.getElementById("user-avatar").src = u.photoURL;
+              showScreen("app");
+              initFirestoreListener();
+              requestWakeLock();
             } else {
-                showScreen('setup');
+              showScreen("login");
+            }
+          });
+        } catch (e) {
+          alert("Invalid Configuration.");
+          localStorage.removeItem(CONFIG_KEY);
+          location.reload();
+        }
+      }
+
+      // --- SYNC ---
+      function initFirestoreListener() {
+        if (!user) return;
+        const docRef = doc(db, "users", user.uid);
+        showSyncStatus("Connecting...", "yellow");
+
+        onSnapshot(
+          docRef,
+          (docSnap) => {
+            showSyncStatus("Synced", "emerald");
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (
+                data.rawRoutine !== appState.rawRoutine ||
+                data.currentTaskIndex !== appState.currentTaskIndex
+              ) {
+                appState.rawRoutine = data.rawRoutine || "";
+                appState.currentTaskIndex = data.currentTaskIndex || 0;
+                inputs.routine.value = appState.rawRoutine;
+                parseAndRender();
+              }
+            } else if (!appState.rawRoutine) {
+              appState.rawRoutine = "";
+              views.edit.classList.remove("translate-x-full");
+            }
+          },
+          (error) => {
+            showSyncStatus("Error!", "red");
+            if (error.code === "permission-denied")
+              alert("⚠️ Sync Error: Check Firestore Rules.");
+          }
+        );
+      }
+
+      async function saveStateToCloud() {
+        if (!user) return;
+        showSyncStatus("Saving...", "blue");
+        try {
+          await setDoc(
+            doc(db, "users", user.uid),
+            {
+              rawRoutine: appState.rawRoutine,
+              currentTaskIndex: appState.currentTaskIndex,
+              lastUpdated: Date.now(),
+            },
+            { merge: true }
+          );
+          showSyncStatus("Synced", "emerald");
+        } catch (e) {
+          showSyncStatus("Error!", "red");
+        }
+      }
+
+      function showSyncStatus(msg, color) {
+        display.syncStatus.innerText =
+          msg === "Synced"
+            ? `Last Sync: ${new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}`
+            : msg;
+        display.syncIndicator.className = `w-2 h-2 rounded-full mr-2 transition-colors duration-300 ${
+          color === "emerald"
+            ? "bg-emerald-500"
+            : color === "yellow"
+            ? "bg-yellow-500"
+            : color === "red"
+            ? "bg-red-500"
+            : "bg-blue-500"
+        }`;
+      }
+
+      // --- CORE LOGIC ---
+      function parseRoutine(text) {
+        const lines = text.split("\n"); // Keep all lines to preserve index
+        return lines
+          .map((line, index) => {
+            if (line.trim() === "") return null; // Skip empty but keep index context
+
+            let type = "standard";
+            let meta = null;
+            let cleanText = line;
+
+            const timeMatch = line.match(/@(\d{1,2}:\d{2})/);
+            if (timeMatch) {
+              type = "gate";
+              meta = timeMatch[1];
+              cleanText = cleanText.replace(timeMatch[0], "").trim();
             }
 
-            setupEventListeners();
-        }
-
-        function initFirebase(config) {
-            try {
-                app = initializeApp(config);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                
-                // Auth Listener
-                onAuthStateChanged(auth, (u) => {
-                    if (u) {
-                        user = u;
-                        document.getElementById('user-avatar').src = u.photoURL;
-                        showScreen('app');
-                        initFirestoreListener();
-                        requestWakeLock();
-                    } else {
-                        showScreen('login');
-                    }
-                });
-            } catch (e) {
-                console.error("Firebase Init Error", e);
-                alert("Invalid Configuration. Please reset.");
-                localStorage.removeItem(CONFIG_KEY);
-                location.reload();
+            const durationMatch = line.match(/\[(\d+)m\]/i);
+            if (durationMatch) {
+              type = "timer";
+              meta = parseInt(durationMatch[1]) * 60;
+              cleanText = cleanText.replace(durationMatch[0], "").trim();
             }
+
+            const tillMatch = line.match(/till\s+(\d{1,2}:\d{2})/i);
+            if (tillMatch) {
+              type = "till";
+              meta = tillMatch[1];
+              cleanText = cleanText.replace(tillMatch[0], "").trim();
+            }
+
+            const highMatch = line.match(/==(.*?)==/);
+            let isHigh = false;
+            if (highMatch) {
+              isHigh = true;
+              cleanText = cleanText.replace(/==/g, "").trim();
+            }
+
+            const emojiMatch = cleanText.match(
+              /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
+            );
+            const icon = emojiMatch ? emojiMatch[0] : "✅"; // Default Green Tick
+            const displayText = cleanText.replace(icon, "").trim();
+
+            return {
+              id: index,
+              raw: line,
+              text: displayText,
+              icon,
+              type,
+              meta,
+              isHigh,
+            };
+          })
+          .filter((t) => t !== null);
+      }
+
+      function parseAndRender() {
+        appState.tasks = parseRoutine(appState.rawRoutine);
+        stopAlarmLoop();
+        clearInterval(timerInterval);
+
+        // Bounds
+        if (appState.currentTaskIndex >= appState.tasks.length) {
+          document
+            .getElementById("active-task-container")
+            .classList.add("hidden");
+          document.getElementById("all-done-state").classList.remove("hidden");
+          document.getElementById("empty-state").classList.add("hidden");
+          return;
+        }
+        if (appState.tasks.length === 0) {
+          document.getElementById("empty-state").classList.remove("hidden");
+          document
+            .getElementById("active-task-container")
+            .classList.add("hidden");
+          return;
         }
 
-        // --- FIRESTORE SYNC ---
-        function initFirestoreListener() {
-            if (!user) return;
-            
-            // SIMPLIFIED PATH: users/{uid}
-            // Standardizing to the most reliable path structure for default rules
-            const docRef = doc(db, 'users', user.uid);
-            
-            showSyncStatus("Connecting...", "yellow");
+        // Render Task
+        document.getElementById("empty-state").classList.add("hidden");
+        document.getElementById("all-done-state").classList.add("hidden");
+        document
+          .getElementById("active-task-container")
+          .classList.remove("hidden");
 
-            onSnapshot(docRef, (docSnap) => {
-                showSyncStatus("Synced", "emerald");
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    // Only update if data actually changed to prevent loops
-                    if (data.rawRoutine !== appState.rawRoutine || data.currentTaskIndex !== appState.currentTaskIndex) {
-                        appState.rawRoutine = data.rawRoutine || "";
-                        appState.currentTaskIndex = data.currentTaskIndex || 0;
-                        inputs.routine.value = appState.rawRoutine;
-                        parseAndRender();
-                    }
-                } else {
-                    // New user or deleted doc
-                    if(!appState.rawRoutine) {
-                         appState.rawRoutine = "";
-                         views.edit.classList.remove('translate-x-full'); // Auto open edit
-                    }
-                }
-            }, (error) => {
-                console.error("Sync error:", error);
-                showSyncStatus("Error!", "red");
-                if (error.code === 'permission-denied') {
-                    alert("⚠️ SYNC ERROR: Permission Denied\n\nYour Firebase Rules are blocking the app.\n\n1. Go to Firebase Console -> Firestore Database -> Rules\n2. Change 'false' to 'request.auth != null'\n3. Publish.");
-                }
+        const task = appState.tasks[appState.currentTaskIndex];
+        const nextTask = appState.tasks[appState.currentTaskIndex + 1];
+
+        display.taskText.innerText = task.text || "Untitled";
+        display.taskIcon.innerText = task.icon;
+        display.nextTask.innerText = nextTask
+          ? `Next: ${nextTask.text}`
+          : "Next: Finish Line";
+
+        if (task.isHigh) {
+          display.taskCard.classList.add("priority-glow", "border-yellow-500");
+          display.taskText.classList.add("text-yellow-400");
+        } else {
+          display.taskCard.classList.remove(
+            "priority-glow",
+            "border-yellow-500"
+          );
+          display.taskText.classList.remove("text-yellow-400");
+        }
+
+        display.globalProgress.style.width = `${
+          (appState.currentTaskIndex / appState.tasks.length) * 100
+        }%`;
+
+        // Reset Views
+        display.waitOverlay.classList.add("hidden");
+        display.timerBox.classList.add("hidden");
+        document.getElementById("timer-controls").classList.add("hidden");
+
+        handleTaskLogic(task);
+      }
+
+      function handleTaskLogic(task) {
+        if (task.type === "gate") {
+          const target = getNextOccurrence(task.meta);
+          if (new Date() < target) {
+            display.waitOverlay.classList.remove("hidden");
+            display.waitTarget.innerText = task.meta;
+            startTimerCheck(() => {
+              const diff = target - new Date();
+              if (diff <= 0) {
+                clearInterval(timerInterval);
+                display.waitOverlay.classList.add("hidden");
+                startAlarmLoop(); // Loop alarm
+              } else {
+                display.waitCount.innerText = formatTime(
+                  Math.floor(diff / 1000)
+                );
+              }
             });
+          }
+        } else if (task.type === "timer") {
+          startCountDown(task.meta);
+        } else if (task.type === "till") {
+          const target = getNextOccurrence(task.meta);
+          const diffSeconds = Math.floor((target - new Date()) / 1000);
+          if (diffSeconds > 0) startCountDown(diffSeconds);
+          else {
+            display.timerVal.innerText = "00:00";
+            display.timerBox.classList.remove("hidden");
+          }
         }
+      }
 
-        async function saveStateToCloud() {
-            if (!user) return;
-            showSyncStatus("Saving...", "blue");
-            
-            // SIMPLIFIED PATH matched with Listener
-            const docRef = doc(db, 'users', user.uid);
-            
-            try {
-                await setDoc(docRef, {
-                    rawRoutine: appState.rawRoutine,
-                    currentTaskIndex: appState.currentTaskIndex,
-                    lastUpdated: Date.now()
-                }, { merge: true });
-                showSyncStatus("Synced", "emerald");
-            } catch(e) {
-                console.error("Save failed", e);
-                showSyncStatus("Error!", "red");
-                if (e.code === 'permission-denied') {
-                     alert("⚠️ SAVE FAILED: Permission Denied\n\nPlease update your Firestore Security Rules in the Firebase Console to allow writes.");
-                } else {
-                    alert("Save Failed: " + e.message);
-                }
-            }
-        }
+      function startCountDown(seconds) {
+        display.timerBox.classList.remove("hidden");
+        document.getElementById("timer-controls").classList.remove("hidden");
+        let remaining = seconds;
+        updateTimerDisplay(remaining);
 
-        function showSyncStatus(msg, color) {
-            display.syncStatus.innerText = msg === "Synced" ? `Last Sync: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : msg;
-            
-            // Color handling
-            display.syncIndicator.className = "w-2 h-2 rounded-full mr-2 transition-colors duration-300";
-            if (color === 'emerald') display.syncIndicator.classList.add('bg-emerald-500');
-            else if (color === 'yellow') display.syncIndicator.classList.add('bg-yellow-500');
-            else if (color === 'red') display.syncIndicator.classList.add('bg-red-500');
-            else display.syncIndicator.classList.add('bg-blue-500');
-        }
-
-        // --- CORE LOGIC: PARSER ---
-        function parseRoutine(text) {
-            const lines = text.split('\n').filter(l => l.trim() !== '');
-            return lines.map((line, index) => {
-                let type = 'standard';
-                let meta = null;
-                let cleanText = line;
-                
-                // 1. Check for Time Gate (@HH:MM)
-                const timeMatch = line.match(/@(\d{1,2}:\d{2})/);
-                if (timeMatch) {
-                    type = 'gate';
-                    meta = timeMatch[1];
-                    cleanText = cleanText.replace(timeMatch[0], '').trim();
-                }
-
-                // 2. Check for Duration ([Xm])
-                const durationMatch = line.match(/\[(\d+)m\]/i);
-                if (durationMatch) {
-                    type = 'timer';
-                    meta = parseInt(durationMatch[1]) * 60; // seconds
-                    cleanText = cleanText.replace(durationMatch[0], '').trim();
-                }
-
-                // 3. Check for "Till" (till HH:MM)
-                const tillMatch = line.match(/till\s+(\d{1,2}:\d{2})/i);
-                if (tillMatch) {
-                    type = 'till';
-                    meta = tillMatch[1];
-                    cleanText = cleanText.replace(tillMatch[0], '').trim();
-                }
-
-                // 4. Check for Highlight (==Text==)
-                const highMatch = line.match(/==(.*?)==/);
-                let isHigh = false;
-                if (highMatch) {
-                    isHigh = true;
-                    cleanText = cleanText.replace(/==/g, '').trim();
-                }
-
-                // Emoji extraction (naive)
-                const emojiMatch = cleanText.match(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
-                const icon = emojiMatch ? emojiMatch[0] : '📝';
-                const displayText = cleanText.replace(icon, '').trim();
-
-                return {
-                    id: index,
-                    raw: line,
-                    text: displayText,
-                    icon: icon,
-                    type: type, // standard, gate, timer, till
-                    meta: meta,
-                    isHigh: isHigh
-                };
-            });
-        }
-
-        // --- RENDERER ---
-        function parseAndRender() {
-            appState.tasks = parseRoutine(appState.rawRoutine);
-            
-            // Bounds check
-            if (appState.currentTaskIndex >= appState.tasks.length) {
-                // All done
-                document.getElementById('active-task-container').classList.add('hidden');
-                document.getElementById('all-done-state').classList.remove('hidden');
-                document.getElementById('empty-state').classList.add('hidden');
-                return;
-            }
-
-            if (appState.tasks.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
-                document.getElementById('active-task-container').classList.add('hidden');
-                return;
-            }
-
-            // Normal Render
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('all-done-state').classList.add('hidden');
-            document.getElementById('active-task-container').classList.remove('hidden');
-
-            const task = appState.tasks[appState.currentTaskIndex];
-            const nextTask = appState.tasks[appState.currentTaskIndex + 1];
-
-            // Content
-            display.taskText.innerText = task.text || "Untitled Task";
-            display.taskIcon.innerText = task.icon;
-            display.nextTask.innerText = nextTask ? `Next: ${nextTask.text}` : "Next: Finish Line";
-
-            // Styling
-            if (task.isHigh) {
-                display.taskCard.classList.add('priority-glow', 'border-yellow-500');
-                display.taskText.classList.add('text-yellow-400');
-            } else {
-                display.taskCard.classList.remove('priority-glow', 'border-yellow-500');
-                display.taskText.classList.remove('text-yellow-400');
-            }
-
-            // Progress Bar
-            const prog = ((appState.currentTaskIndex) / appState.tasks.length) * 100;
-            display.globalProgress.style.width = `${prog}%`;
-
-            // Reset dynamic views
-            display.waitOverlay.classList.add('hidden');
-            display.timerBox.classList.add('hidden');
-            document.getElementById('timer-controls').classList.add('hidden');
+        startTimerCheck(() => {
+          remaining--;
+          updateTimerDisplay(remaining);
+          if (remaining <= 0) {
             clearInterval(timerInterval);
+            startAlarmLoop(); // Loop alarm
+          }
+        });
+      }
 
-            // Handle Task Types
-            handleTaskLogic(task);
+      function startTimerCheck(cb) {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(cb, 1000);
+      }
+
+      // --- ALARM LOOP ---
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function startAlarmLoop() {
+        if (alarmLoopInterval) return; // Already looping
+        playAlarm(); // Play immediately
+        alarmLoopInterval = setInterval(playAlarm, 2000); // Repeat every 2s
+      }
+
+      function stopAlarmLoop() {
+        if (alarmLoopInterval) {
+          clearInterval(alarmLoopInterval);
+          alarmLoopInterval = null;
         }
+      }
 
-        function handleTaskLogic(task) {
-            // Logic 1: Time Gate (@HH:MM)
-            if (task.type === 'gate') {
-                const target = getNextOccurrence(task.meta);
-                const now = new Date();
-                
-                if (now < target) {
-                    display.waitOverlay.classList.remove('hidden');
-                    display.waitTarget.innerText = task.meta;
-                    
-                    timerInterval = setInterval(() => {
-                        const diff = target - new Date();
-                        if (diff <= 0) {
-                            clearInterval(timerInterval);
-                            display.waitOverlay.classList.add('hidden');
-                            playAlarm();
-                        } else {
-                            display.waitCount.innerText = formatTime(Math.floor(diff/1000));
-                        }
-                    }, 1000);
-                }
-            }
+      function playAlarm() {
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(
+          880,
+          audioCtx.currentTime + 0.5
+        );
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(
+          0.001,
+          audioCtx.currentTime + 0.5
+        );
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      }
 
-            // Logic 2: Duration ([20m])
-            if (task.type === 'timer') {
-                startTimer(task.meta); // meta is seconds
-            }
+      function updateTimerDisplay(s) {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        display.timerVal.innerText = `${h > 0 ? h + ":" : ""}${m
+          .toString()
+          .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+      }
 
-            // Logic 3: Till (till HH:MM)
-            if (task.type === 'till') {
-                const target = getNextOccurrence(task.meta);
-                const now = new Date();
-                const diffSeconds = Math.floor((target - now) / 1000);
-                
-                if (diffSeconds > 0) {
-                    startTimer(diffSeconds);
-                } else {
-                    // Already past time
-                    display.timerVal.innerText = "00:00";
-                    display.timerBox.classList.remove('hidden');
-                }
-            }
-        }
+      window.adjustTimer = (secs) => {
+        stopAlarmLoop(); // Stop alarm if adding time
+        const parts = display.timerVal.innerText.split(":");
+        let currentSecs = 0;
+        if (parts.length === 3)
+          currentSecs =
+            parseInt(parts[0]) * 3600 +
+            parseInt(parts[1]) * 60 +
+            parseInt(parts[2]);
+        else currentSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        startCountDown(currentSecs + secs);
+      };
 
-        function startTimer(seconds) {
-            display.timerBox.classList.remove('hidden');
-            document.getElementById('timer-controls').classList.remove('hidden');
-            let remaining = seconds;
-            
-            updateTimerDisplay(remaining);
-            
-            timerInterval = setInterval(() => {
-                remaining--;
-                updateTimerDisplay(remaining);
-                if (remaining <= 0) {
-                    clearInterval(timerInterval);
-                    playDing();
-                }
-            }, 1000);
-        }
+      function getNextOccurrence(timeStr) {
+        const [h, m] = timeStr.split(":").map(Number);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        return d;
+      }
 
-        function updateTimerDisplay(seconds) {
-            display.timerVal.innerText = formatTime(seconds);
-        }
+      function formatTime(s) {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return `${h > 0 ? h + ":" : ""}${m.toString().padStart(2, "0")}:${sec
+          .toString()
+          .padStart(2, "0")}`;
+      }
 
-        window.adjustTimer = (secs) => {
-            const currentParts = display.timerVal.innerText.split(':');
-            const currentSecs = (parseInt(currentParts[0]) * 3600) + (parseInt(currentParts[1]) * 60) + parseInt(currentParts[2]);
-            clearInterval(timerInterval);
-            startTimer(currentSecs + secs);
+      async function requestWakeLock() {
+        try {
+          wakeLock = await navigator.wakeLock.request("screen");
+          document.addEventListener("visibilitychange", async () => {
+            if (wakeLock !== null && document.visibilityState === "visible")
+              wakeLock = await navigator.wakeLock.request("screen");
+          });
+        } catch (err) {}
+      }
+
+      // --- EVENTS ---
+      function setupEventListeners() {
+        document.getElementById("save-config-btn").onclick = async () => {
+          const val = document.getElementById("config-input").value.trim();
+          try {
+            let config = val.startsWith("http")
+              ? await (await fetch(val)).json()
+              : JSON.parse(val);
+            if (!config.projectId) throw new Error();
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+            location.reload();
+          } catch (e) {
+            document.getElementById("setup-error").innerText = "Invalid Config";
+            document.getElementById("setup-error").classList.remove("hidden");
+          }
         };
 
-        // --- HELPERS ---
-        function getNextOccurrence(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            const now = new Date();
-            const target = new Date();
-            target.setHours(hours, minutes, 0, 0);
-            return target;
-        }
+        document.getElementById("reset-config-btn").onclick = () => {
+          if (confirm("Reset?")) {
+            localStorage.removeItem(CONFIG_KEY);
+            location.reload();
+          }
+        };
+        document.getElementById("sync-wrapper").onclick = () =>
+          initFirestoreListener();
+        document.getElementById("google-login-btn").onclick = () =>
+          signInWithPopup(auth, new GoogleAuthProvider()).catch((e) =>
+            alert(e.message)
+          );
+        document.getElementById("logout-btn").onclick = () => signOut(auth);
+        document.getElementById("toggle-mode-btn").onclick = () =>
+          views.edit.classList.toggle("translate-x-full");
 
-        function formatTime(seconds) {
-            if (seconds < 0) seconds = 0;
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        }
+        document.getElementById("save-routine-btn").onclick = () => {
+          appState.rawRoutine = inputs.routine.value;
+          appState.currentTaskIndex = 0;
+          saveStateToCloud();
+          views.edit.classList.add("translate-x-full");
+          parseAndRender();
+        };
 
-        // --- AUDIO ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playAlarm() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-            setTimeout(() => {
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'square';
-                osc2.frequency.setValueAtTime(440, audioCtx.currentTime);
-                gain2.gain.value = 0.1;
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start();
-                osc2.stop(audioCtx.currentTime + 0.3);
-            }, 600);
-        }
+        // DONE
+        document.getElementById("done-btn").onclick = () => {
+          stopAlarmLoop();
+          appState.currentTaskIndex++;
+          saveStateToCloud();
+          parseAndRender();
+        };
 
-        function playDing() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.6);
-        }
+        // SKIP
+        document.getElementById("skip-btn").onclick = () => {
+          stopAlarmLoop();
+          appState.currentTaskIndex++;
+          saveStateToCloud();
+          parseAndRender();
+        };
 
-        // --- WAKE LOCK ---
-        async function requestWakeLock() {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                wakeLock.addEventListener('release', () => {});
-                document.addEventListener('visibilitychange', async () => {
-                    if (wakeLock !== null && document.visibilityState === 'visible') {
-                        wakeLock = await navigator.wakeLock.request('screen');
-                    }
-                });
-            } catch (err) {}
-        }
+        // UNDO
+        document.getElementById("undo-btn").onclick = () => {
+          stopAlarmLoop();
+          if (appState.currentTaskIndex > 0) {
+            appState.currentTaskIndex--;
+            saveStateToCloud();
+            parseAndRender();
+          }
+        };
 
-        // --- EVENT LISTENERS ---
-        function setupEventListeners() {
-            // Setup
-            document.getElementById('save-config-btn').onclick = async () => {
-                const val = document.getElementById('config-input').value.trim();
-                const btn = document.getElementById('save-config-btn');
-                const spinner = document.getElementById('config-spinner');
-                const errorText = document.getElementById('setup-error');
-                
-                errorText.classList.add('hidden');
-                
-                let configData = null;
+        // FORCE START (Wait Overlay)
+        document.getElementById("force-start-btn").onclick = () => {
+          display.waitOverlay.classList.add("hidden");
+          stopAlarmLoop(); // Just in case
+          clearInterval(timerInterval);
+        };
 
-                try {
-                    if (val.startsWith('http')) {
-                        // It's a URL (Gist)
-                        btn.disabled = true;
-                        spinner.classList.remove('hidden');
+        document.getElementById("reset-btn").onclick = () => {
+          appState.currentTaskIndex = 0;
+          saveStateToCloud();
+          parseAndRender();
+        };
 
-                        const res = await fetch(val);
-                        if (!res.ok) throw new Error("Failed to fetch Gist");
-                        configData = await res.json();
-                        
-                        btn.disabled = false;
-                        spinner.classList.add('hidden');
-                    } else {
-                        // It's raw JSON
-                        configData = JSON.parse(val);
-                    }
+        // QUICK EDIT
+        document.getElementById("quick-edit-btn").onclick = () => {
+          const task = appState.tasks[appState.currentTaskIndex];
+          if (task) {
+            document.getElementById("quick-edit-input").value = task.raw;
+            document
+              .getElementById("quick-edit-modal")
+              .classList.remove("hidden");
+          }
+        };
 
-                    // Validate minimal keys
-                    if (!configData.apiKey || !configData.projectId) throw new Error("Invalid Firebase Config (Missing apiKey or projectId)");
+        document.getElementById("cancel-quick-edit").onclick = () =>
+          document.getElementById("quick-edit-modal").classList.add("hidden");
 
-                    localStorage.setItem(CONFIG_KEY, JSON.stringify(configData));
-                    location.reload();
+        // SAVE QUICK EDIT (FIXED LOGIC)
+        document.getElementById("save-quick-edit").onclick = () => {
+          const newVal = document.getElementById("quick-edit-input").value;
+          const taskID = appState.tasks[appState.currentTaskIndex].id; // Get original line index
+          const lines = appState.rawRoutine.split("\n");
 
-                } catch(e) {
-                    console.error(e);
-                    errorText.innerText = e.message || "Error parsing config.";
-                    errorText.classList.remove('hidden');
-                    btn.disabled = false;
-                    spinner.classList.add('hidden');
-                }
-            };
-            
-            document.getElementById('reset-config-btn').onclick = () => {
-                if(confirm('Clear database connection?')) {
-                    localStorage.removeItem(CONFIG_KEY);
-                    location.reload();
-                }
-            };
-            
-            // Force Sync
-            document.getElementById('sync-wrapper').onclick = () => {
-                initFirestoreListener();
-            };
+          if (lines[taskID] !== undefined) {
+            lines[taskID] = newVal;
+            appState.rawRoutine = lines.join("\n");
+            saveStateToCloud();
+            document.getElementById("quick-edit-modal").classList.add("hidden");
+          }
+        };
+      }
 
-            // Auth - Updated with Catch block
-            document.getElementById('google-login-btn').onclick = () => {
-                const errorMsg = document.getElementById('login-error-msg');
-                errorMsg.classList.add('hidden');
-                signInWithPopup(auth, new GoogleAuthProvider())
-                    .catch((error) => {
-                        console.error("Login Failed", error);
-                        // Display error in UI
-                        errorMsg.innerText = `Error: ${error.code}. Check Authorized Domains in Firebase Console.`;
-                        errorMsg.classList.remove('hidden');
-                        
-                        // Fallback alert for clarity
-                        if (error.code === 'auth/unauthorized-domain') {
-                            alert("Authentication Failed: Domain not authorized.\n\nGo to Firebase Console -> Authentication -> Settings -> Authorized Domains.\nAdd 'localhost' or your current domain.");
-                        } else if (error.code === 'auth/operation-not-allowed') {
-                            alert("Authentication Failed: Google Sign-in is disabled.\n\nGo to Firebase Console -> Authentication -> Sign-in method -> Enable Google.");
-                        } else {
-                            alert(`Authentication Error: ${error.message}`);
-                        }
-                    });
-            };
-            
-            document.getElementById('logout-btn').onclick = () => signOut(auth);
-
-            // Navigation
-            document.getElementById('toggle-mode-btn').onclick = () => {
-                views.edit.classList.toggle('translate-x-full');
-            };
-
-            // Saving
-            document.getElementById('save-routine-btn').onclick = () => {
-                appState.rawRoutine = inputs.routine.value;
-                appState.currentTaskIndex = 0; // Reset progress on major edit
-                saveStateToCloud();
-                views.edit.classList.add('translate-x-full');
-                parseAndRender();
-            };
-
-            // Task Actions
-            document.getElementById('done-btn').onclick = () => {
-                playDing(); // --- ADDED SOUND HERE ---
-                appState.currentTaskIndex++;
-                saveStateToCloud();
-                parseAndRender();
-            };
-
-            document.getElementById('skip-btn').onclick = () => {
-                appState.currentTaskIndex++;
-                saveStateToCloud();
-                parseAndRender();
-            };
-
-            document.getElementById('reset-btn').onclick = () => {
-                appState.currentTaskIndex = 0;
-                saveStateToCloud();
-                parseAndRender();
-            };
-
-            // Quick Edit
-            document.getElementById('quick-edit-btn').onclick = () => {
-                const currentLine = appState.tasks[appState.currentTaskIndex].raw;
-                document.getElementById('quick-edit-input').value = currentLine;
-                document.getElementById('quick-edit-modal').classList.remove('hidden');
-            };
-
-            document.getElementById('cancel-quick-edit').onclick = () => {
-                document.getElementById('quick-edit-modal').classList.add('hidden');
-            };
-
-            document.getElementById('save-quick-edit').onclick = () => {
-                const newVal = document.getElementById('quick-edit-input').value;
-                const lines = appState.rawRoutine.split('\n');
-                let nonEmptyCount = 0;
-                let newRaw = lines.map(line => {
-                    if (line.trim() === '') return line;
-                    if (nonEmptyCount === appState.currentTaskIndex) {
-                        nonEmptyCount++;
-                        return newVal;
-                    }
-                    nonEmptyCount++;
-                    return line;
-                }).join('\n');
-
-                appState.rawRoutine = newRaw;
-                saveStateToCloud();
-                document.getElementById('quick-edit-modal').classList.add('hidden');
-            };
-        }
-
-        function showScreen(name) {
-            Object.values(screens).forEach(el => el.classList.add('hidden'));
-            screens[name].classList.remove('hidden');
-        }
-
-        // Start
-        window.addEventListener('load', init);
-
+      function showScreen(name) {
+        Object.values(screens).forEach((el) => el.classList.add("hidden"));
+        screens[name].classList.remove("hidden");
+      }
+      window.addEventListener("load", init);
     </script>
-</body>
+  </body>
 </html>
