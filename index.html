@@ -153,6 +153,13 @@
         id="login-error-msg"
         class="text-red-400 text-xs mt-4 hidden text-center max-w-xs"
       ></p>
+      <!-- Renamed ID to avoid duplicate -->
+      <button
+        id="login-reset-btn"
+        class="mt-8 text-slate-600 text-xs hover:text-slate-400 underline"
+      >
+        Reset Database Config
+      </button>
     </div>
 
     <!-- MAIN APP -->
@@ -164,7 +171,8 @@
         <div class="flex items-center gap-3">
           <img
             src="https://iili.io/feNCCNV.png"
-            class="h-8 w-8 object-contain"
+            class="h-8 w-8 object-contain cursor-pointer active:scale-95 transition"
+            id="home-logo-btn"
             alt="RR Logo"
           />
           <div
@@ -184,24 +192,18 @@
           </div>
         </div>
         <div class="flex items-center gap-4">
-          <button
-            id="toggle-mode-btn"
-            class="text-muted-custom hover:text-emerald-500 transition"
-          >
-            <i class="fas fa-pen"></i>
-          </button>
+          <img
+            id="user-avatar"
+            src=""
+            class="w-8 h-8 rounded-full border border-custom"
+            alt="User"
+          />
           <button
             id="settings-btn"
             class="text-muted-custom hover:text-blue-500 transition"
           >
-            <i class="fas fa-cog"></i>
+            <i class="fas fa-cog text-xl"></i>
           </button>
-          <img
-            id="user-avatar"
-            src=""
-            class="w-8 h-8 rounded-full border border-custom hidden sm:block"
-            alt="User"
-          />
         </div>
       </header>
 
@@ -222,93 +224,117 @@
             </button>
           </div>
 
-          <!-- Theme Toggle -->
-          <div
-            class="flex justify-between items-center mb-6 p-4 border border-custom rounded-xl"
-          >
-            <div class="flex items-center gap-3">
-              <i class="fas fa-moon text-blue-400"></i>
-              <span class="font-medium">Dark Mode</span>
-            </div>
-            <div
-              class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+          <!-- Main Actions -->
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <button
+              id="edit-routine-btn"
+              class="col-span-2 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg flex items-center justify-center gap-2"
             >
-              <input
-                type="checkbox"
-                name="toggle"
-                id="theme-toggle"
-                class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                for="theme-toggle"
-                class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
-              ></label>
-            </div>
+              <i class="fas fa-pen"></i> Edit Routine
+            </button>
           </div>
 
-          <!-- Auto Advance -->
-          <div
-            class="flex justify-between items-center mb-6 p-4 border border-custom rounded-xl"
-          >
-            <div class="flex items-center gap-3">
-              <i class="fas fa-forward text-emerald-400"></i>
-              <div>
-                <span class="font-medium block">Auto Advance</span>
-                <span class="text-xs text-muted-custom"
-                  >Next task without alarm</span
-                >
+          <!-- Log Management -->
+          <div class="mb-6">
+            <h3
+              class="text-xs font-bold text-muted-custom uppercase mb-3 tracking-wider"
+            >
+              Weekly Review & Logs
+            </h3>
+            <button
+              id="manage-logs-btn"
+              class="w-full py-3 rounded-lg border border-custom text-blue-400 hover:bg-blue-500/10 font-medium flex justify-between items-center px-4"
+            >
+              <span
+                ><i class="fas fa-file-code mr-2"></i> Manage / Export
+                Logs</span
+              >
+              <i class="fas fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Toggles -->
+          <div class="space-y-4 mb-8">
+            <!-- Theme -->
+            <div
+              class="flex justify-between items-center p-4 border border-custom rounded-xl"
+            >
+              <div class="flex items-center gap-3">
+                <i class="fas fa-moon text-blue-400"></i>
+                <span class="font-medium">Dark Mode</span>
+              </div>
+              <div class="relative inline-block w-10 align-middle select-none">
+                <input
+                  type="checkbox"
+                  id="theme-toggle"
+                  class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                />
+                <label
+                  for="theme-toggle"
+                  class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
+                ></label>
               </div>
             </div>
+
+            <!-- Auto Advance -->
             <div
-              class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+              class="flex justify-between items-center p-4 border border-custom rounded-xl"
             >
-              <input
-                type="checkbox"
-                name="toggle"
-                id="auto-advance-toggle"
-                class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                for="auto-advance-toggle"
-                class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
-              ></label>
+              <div class="flex items-center gap-3">
+                <i class="fas fa-forward text-emerald-400"></i>
+                <div>
+                  <span class="font-medium block">Auto Advance</span>
+                  <span class="text-xs text-muted-custom"
+                    >Next task without alarm</span
+                  >
+                </div>
+              </div>
+              <div class="relative inline-block w-10 align-middle select-none">
+                <input
+                  type="checkbox"
+                  id="auto-advance-toggle"
+                  class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                />
+                <label
+                  for="auto-advance-toggle"
+                  class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
+                ></label>
+              </div>
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="space-y-3 mt-auto">
+          <!-- Danger Zone -->
+          <div class="space-y-3 mt-auto border-t border-custom pt-6">
             <button
               id="refresh-btn"
-              class="w-full py-3 rounded-lg border border-custom text-muted-custom hover:bg-slate-700/10 font-medium"
+              class="w-full py-3 rounded-lg text-muted-custom hover:bg-slate-700/10 text-sm"
             >
-              <i class="fas fa-sync-alt mr-2"></i> Refresh App
+              Refresh App
             </button>
             <button
               id="reset-day-btn"
-              class="w-full py-3 rounded-lg border border-custom text-yellow-500 hover:bg-yellow-500/10 font-medium"
+              class="w-full py-3 rounded-lg text-yellow-500 hover:bg-yellow-500/10 text-sm"
             >
-              <i class="fas fa-redo mr-2"></i> Reset Day Progress
+              Reset Day Progress
             </button>
             <button
               id="settings-logout-btn"
-              class="w-full py-3 rounded-lg border border-custom text-red-500 hover:bg-red-500/10 font-medium"
+              class="w-full py-3 rounded-lg text-red-500 hover:bg-red-500/10 font-bold"
             >
-              <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+              Sign Out
             </button>
+            <!-- Renamed ID to avoid duplicate -->
             <button
-              id="reset-config-btn"
+              id="settings-disconnect-btn"
               class="w-full py-3 rounded-lg text-xs text-muted-custom underline hover:text-red-400"
             >
               Disconnect Database
             </button>
           </div>
 
-          <div class="mt-8 text-center">
+          <div class="mt-6 text-center">
             <p class="text-[10px] text-muted-custom mono">
               ID: <span id="user-id-display">...</span>
-            </p>
-            <p class="text-[10px] text-muted-custom mt-1">
-              v3.0.0 • Rolls Royce Edition
             </p>
           </div>
         </div>
@@ -316,8 +342,17 @@
         <!-- EDIT VIEW -->
         <div
           id="edit-view"
-          class="absolute inset-0 bg-card-custom flex flex-col p-4 transition-transform duration-300 translate-x-full z-20"
+          class="absolute inset-0 bg-card-custom flex flex-col p-4 transition-transform duration-300 translate-x-full z-30"
         >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Edit Routine</h2>
+            <button
+              id="close-edit-btn"
+              class="text-muted-custom hover:text-white"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
           <textarea
             id="routine-input"
             class="flex-1 bg-body text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-4 border border-custom"
@@ -328,9 +363,49 @@
             <p class="text-xs text-muted-custom">Auto-saves to cloud</p>
             <button
               id="save-routine-btn"
-              class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition"
+              class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition w-full"
             >
               Save & Run
+            </button>
+          </div>
+        </div>
+
+        <!-- LOG MANAGER MODAL -->
+        <div
+          id="log-manager-modal"
+          class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col p-4"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-white">Log Manager</h2>
+            <button id="close-logs-btn" class="text-slate-400 hover:text-white">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <p class="text-xs text-slate-400 mb-2">
+            Edit JSON directly to modify history. Careful!
+          </p>
+          <textarea
+            id="logs-input"
+            class="flex-1 bg-slate-800 text-green-400 p-4 rounded-xl mono text-xs resize-none focus:outline-none border border-slate-700 mb-4"
+          ></textarea>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              id="copy-logs-btn"
+              class="py-3 bg-slate-800 text-white rounded-lg border border-slate-700 font-bold"
+            >
+              Copy
+            </button>
+            <button
+              id="download-logs-btn"
+              class="py-3 bg-slate-800 text-white rounded-lg border border-slate-700 font-bold"
+            >
+              Download
+            </button>
+            <button
+              id="save-logs-btn"
+              class="py-3 bg-blue-600 text-white rounded-lg font-bold"
+            >
+              Save Edits
             </button>
           </div>
         </div>
@@ -347,7 +422,9 @@
             <div id="empty-state" class="text-center hidden">
               <i class="fas fa-wind text-6xl text-slate-500 mb-4"></i>
               <h2 class="text-xl font-bold">No Routine Set</h2>
-              <p class="text-muted-custom mt-2">Tap the pen icon to start.</p>
+              <p class="text-muted-custom mt-2">
+                Go to Settings > Edit Routine.
+              </p>
             </div>
 
             <!-- Done State -->
@@ -551,8 +628,12 @@
         edit: document.getElementById("edit-view"),
         run: document.getElementById("run-view"),
         settings: document.getElementById("settings-view"),
+        logs: document.getElementById("log-manager-modal"),
       };
-      const inputs = { routine: document.getElementById("routine-input") };
+      const inputs = {
+        routine: document.getElementById("routine-input"),
+        logs: document.getElementById("logs-input"),
+      };
       const display = {
         taskCard: document.getElementById("task-card"),
         taskText: document.getElementById("task-text"),
@@ -578,6 +659,7 @@
         rawRoutine: "",
         currentTaskIndex: 0,
         tasks: [],
+        history: {}, // Keyed by YYYY-MM-DD
         settings: {
           darkMode: true,
           autoAdvance: false,
@@ -590,7 +672,6 @@
 
       // --- INIT ---
       function init() {
-        // Check protocol before registering SW to avoid blob/file errors in preview
         if (
           "serviceWorker" in navigator &&
           (location.protocol === "http:" || location.protocol === "https:")
@@ -598,17 +679,14 @@
           navigator.serviceWorker.register("sw.js").catch(console.error);
         }
 
-        // Load Local Settings
         const savedSettings = localStorage.getItem("rr_settings");
         if (savedSettings)
           appState.settings = {
             ...appState.settings,
             ...JSON.parse(savedSettings),
           };
-
         applySettings();
 
-        // Load Firebase Config
         const storedConfig = localStorage.getItem(CONFIG_KEY);
         if (storedConfig) {
           try {
@@ -623,7 +701,6 @@
       }
 
       function applySettings() {
-        // Theme
         if (appState.settings.darkMode) {
           document.body.classList.remove("light-mode");
           document.getElementById("theme-color-meta").content = "#0f172a";
@@ -670,15 +747,14 @@
             showSyncStatus("Synced", "emerald");
             if (docSnap.exists()) {
               const data = docSnap.data();
-              if (
-                data.rawRoutine !== appState.rawRoutine ||
-                data.currentTaskIndex !== appState.currentTaskIndex
-              ) {
-                appState.rawRoutine = data.rawRoutine || "";
-                appState.currentTaskIndex = data.currentTaskIndex || 0;
+              // Merge remote data
+              appState.rawRoutine = data.rawRoutine || "";
+              appState.currentTaskIndex = data.currentTaskIndex || 0;
+              appState.history = data.history || {}; // Sync History
+
+              if (document.activeElement !== inputs.routine)
                 inputs.routine.value = appState.rawRoutine;
-                parseAndRender();
-              }
+              parseAndRender();
             } else if (!appState.rawRoutine) {
               appState.rawRoutine = "";
               views.edit.classList.remove("translate-x-full");
@@ -699,6 +775,7 @@
             {
               rawRoutine: appState.rawRoutine,
               currentTaskIndex: appState.currentTaskIndex,
+              history: appState.history,
               lastUpdated: Date.now(),
             },
             { merge: true }
@@ -728,13 +805,28 @@
         }`;
       }
 
-      // --- LOGIC ---
+      // --- LOGGING ---
+      function logTask(status) {
+        const task = appState.tasks[appState.currentTaskIndex];
+        if (!task) return;
+
+        const today = new Date().toISOString().split("T")[0];
+        if (!appState.history[today]) appState.history[today] = [];
+
+        appState.history[today].push({
+          time: new Date().toLocaleTimeString(),
+          task: task.text,
+          status: status,
+        });
+        // State is saved after this call in actions
+      }
+
+      // --- LOGIC & RENDERER ---
       function parseRoutine(text) {
         const lines = text.split("\n");
         return lines
           .map((line, index) => {
             if (line.trim() === "") return null;
-
             let type = "standard",
               meta = null,
               cleanText = line;
@@ -791,7 +883,6 @@
         stopAlarm();
         clearInterval(timerInterval);
 
-        // Bounds
         if (appState.currentTaskIndex >= appState.tasks.length) {
           document
             .getElementById("active-task-container")
@@ -823,17 +914,13 @@
           ? `Next: ${nextTask.text}`
           : "Next: Finish Line";
 
-        if (task.isHigh) {
-          display.taskCard.classList.add("priority-glow");
-        } else {
-          display.taskCard.classList.remove("priority-glow");
-        }
+        if (task.isHigh) display.taskCard.classList.add("priority-glow");
+        else display.taskCard.classList.remove("priority-glow");
 
         display.globalProgress.style.width = `${
           (appState.currentTaskIndex / appState.tasks.length) * 100
         }%`;
 
-        // Views Reset
         display.waitOverlay.classList.add("hidden");
         display.timerBox.classList.add("hidden");
         document.getElementById("timer-controls").classList.add("hidden");
@@ -878,7 +965,6 @@
         document.getElementById("timer-controls").classList.remove("hidden");
         let remaining = seconds;
         updateTimerDisplay(remaining);
-
         startTimerCheck(() => {
           remaining--;
           updateTimerDisplay(remaining);
@@ -891,6 +977,7 @@
 
       function triggerCompletion() {
         if (appState.settings.autoAdvance) {
+          logTask("auto-done");
           appState.currentTaskIndex++;
           saveStateToCloud();
           parseAndRender();
@@ -905,18 +992,17 @@
       }
 
       function startAlarmLoop() {
-        alarmAudio.play().catch((e) => console.log("Audio play blocked", e));
+        alarmAudio.play().catch((e) => console.log("Audio block", e));
       }
-
       function stopAlarm() {
         alarmAudio.pause();
         alarmAudio.currentTime = 0;
       }
 
       function updateTimerDisplay(s) {
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        const sec = s % 60;
+        const h = Math.floor(s / 3600),
+          m = Math.floor((s % 3600) / 60),
+          sec = s % 60;
         display.timerVal.innerText = `${h > 0 ? h + ":" : ""}${m
           .toString()
           .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
@@ -925,13 +1011,12 @@
       window.adjustTimer = (secs) => {
         stopAlarm();
         const parts = display.timerVal.innerText.split(":");
-        let currentSecs = 0;
-        if (parts.length === 3)
-          currentSecs =
-            parseInt(parts[0]) * 3600 +
-            parseInt(parts[1]) * 60 +
-            parseInt(parts[2]);
-        else currentSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        let currentSecs =
+          parts.length === 3
+            ? parseInt(parts[0]) * 3600 +
+              parseInt(parts[1]) * 60 +
+              parseInt(parts[2])
+            : parseInt(parts[0]) * 60 + parseInt(parts[1]);
         startCountDown(currentSecs + secs);
       };
 
@@ -943,9 +1028,9 @@
       }
 
       function formatTime(s) {
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        const sec = s % 60;
+        const h = Math.floor(s / 3600),
+          m = Math.floor((s % 3600) / 60),
+          sec = s % 60;
         return `${h > 0 ? h + ":" : ""}${m.toString().padStart(2, "0")}:${sec
           .toString()
           .padStart(2, "0")}`;
@@ -962,56 +1047,106 @@
       }
 
       function setupEventListeners() {
-        // SETTINGS & NAV
-        document.getElementById("settings-btn").onclick = () =>
-          views.settings.classList.remove("translate-x-full");
-        document.getElementById("close-settings-btn").onclick = () =>
+        // Helper for safe binding
+        const onClick = (id, fn) => {
+          const el = document.getElementById(id);
+          if (el) el.onclick = fn;
+        };
+
+        // NAV
+        onClick("settings-btn", () =>
+          views.settings.classList.remove("translate-x-full")
+        );
+        onClick("close-settings-btn", () =>
+          views.settings.classList.add("translate-x-full")
+        );
+        onClick("home-logo-btn", () => {
           views.settings.classList.add("translate-x-full");
-        document.getElementById("toggle-mode-btn").onclick = () =>
-          views.edit.classList.toggle("translate-x-full");
+          views.edit.classList.add("translate-x-full");
+        });
+
+        // EDIT ROUTINE
+        onClick("edit-routine-btn", () => {
+          views.settings.classList.add("translate-x-full");
+          views.edit.classList.remove("translate-x-full");
+        });
+        onClick("close-edit-btn", () =>
+          views.edit.classList.add("translate-x-full")
+        );
+
+        // LOGS
+        onClick("manage-logs-btn", () => {
+          inputs.logs.value = JSON.stringify(appState.history, null, 2);
+          views.logs.classList.remove("hidden");
+        });
+        onClick("close-logs-btn", () => views.logs.classList.add("hidden"));
+        onClick("copy-logs-btn", () => {
+          navigator.clipboard.writeText(inputs.logs.value);
+          alert("Logs copied to clipboard!");
+        });
+        onClick("download-logs-btn", () => {
+          const blob = new Blob([inputs.logs.value], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `rr-logs-${new Date().toISOString().split("T")[0]}.json`;
+          a.click();
+        });
+        onClick("save-logs-btn", () => {
+          try {
+            appState.history = JSON.parse(inputs.logs.value);
+            saveStateToCloud();
+            views.logs.classList.add("hidden");
+          } catch (e) {
+            alert("Invalid JSON format. Cannot save.");
+          }
+        });
 
         // ACTIONS
-        document.getElementById("save-routine-btn").onclick = () => {
+        onClick("save-routine-btn", () => {
           appState.rawRoutine = inputs.routine.value;
           appState.currentTaskIndex = 0;
           saveStateToCloud();
           views.edit.classList.add("translate-x-full");
           parseAndRender();
-        };
-        document.getElementById("done-btn").onclick = () => {
+        });
+        onClick("done-btn", () => {
+          logTask("done");
           appState.currentTaskIndex++;
           saveStateToCloud();
           parseAndRender();
-        };
-        document.getElementById("skip-btn").onclick = () => {
+        });
+        onClick("skip-btn", () => {
+          logTask("skipped");
           appState.currentTaskIndex++;
           saveStateToCloud();
           parseAndRender();
-        };
-        document.getElementById("undo-btn").onclick = () => {
+        });
+        onClick("undo-btn", () => {
           if (appState.currentTaskIndex > 0) {
             appState.currentTaskIndex--;
             saveStateToCloud();
             parseAndRender();
           }
-        };
-        document.getElementById("refresh-btn").onclick = () =>
-          location.reload();
-        document.getElementById("reset-day-btn").onclick = () => {
+        });
+        onClick("refresh-btn", () => location.reload());
+        onClick("reset-day-btn", () => {
           if (confirm("Restart day?")) {
             appState.currentTaskIndex = 0;
             saveStateToCloud();
             parseAndRender();
             views.settings.classList.add("translate-x-full");
           }
-        };
-        document.getElementById("force-start-btn").onclick = () => {
+        });
+        onClick("force-start-btn", () => {
           display.waitOverlay.classList.add("hidden");
           stopAlarm();
           clearInterval(timerInterval);
-        };
+        });
 
-        // SETTINGS TOGGLES
+        // SETTINGS
         toggles.theme.addEventListener("change", (e) => {
           appState.settings.darkMode = e.target.checked;
           applySettings();
@@ -1029,7 +1164,7 @@
         });
 
         // AUTH & CONFIG
-        document.getElementById("save-config-btn").onclick = async () => {
+        onClick("save-config-btn", async () => {
           const val = document.getElementById("config-input").value.trim();
           try {
             let config = val.startsWith("http")
@@ -1042,27 +1177,28 @@
             document.getElementById("setup-error").innerText = "Invalid Config";
             document.getElementById("setup-error").classList.remove("hidden");
           }
-        };
-        document.getElementById("reset-config-btn").onclick = () => {
+        });
+
+        const disconnectHandler = () => {
           if (confirm("Disconnect?")) {
             localStorage.removeItem(CONFIG_KEY);
             location.reload();
           }
         };
-        document.getElementById("google-login-btn").onclick = () =>
+        onClick("login-reset-btn", disconnectHandler);
+        onClick("settings-disconnect-btn", disconnectHandler);
+
+        onClick("google-login-btn", () =>
           signInWithPopup(auth, new GoogleAuthProvider()).catch((e) =>
             alert(e.message)
-          );
-
-        // LOGOUT BUTTON IN SETTINGS
-        document.getElementById("settings-logout-btn").onclick = () => {
-          if (confirm("Are you sure you want to sign out?")) {
-            signOut(auth);
-          }
-        };
+          )
+        );
+        onClick("settings-logout-btn", () => {
+          if (confirm("Sign out?")) signOut(auth);
+        });
 
         // QUICK EDIT
-        document.getElementById("quick-edit-btn").onclick = () => {
+        onClick("quick-edit-btn", () => {
           const task = appState.tasks[appState.currentTaskIndex];
           if (task) {
             document.getElementById("quick-edit-input").value = task.raw;
@@ -1070,10 +1206,11 @@
               .getElementById("quick-edit-modal")
               .classList.remove("hidden");
           }
-        };
-        document.getElementById("cancel-quick-edit").onclick = () =>
-          document.getElementById("quick-edit-modal").classList.add("hidden");
-        document.getElementById("save-quick-edit").onclick = () => {
+        });
+        onClick("cancel-quick-edit", () =>
+          document.getElementById("quick-edit-modal").classList.add("hidden")
+        );
+        onClick("save-quick-edit", () => {
           const newVal = document.getElementById("quick-edit-input").value;
           const taskID = appState.tasks[appState.currentTaskIndex].id;
           const lines = appState.rawRoutine.split("\n");
@@ -1083,7 +1220,7 @@
             saveStateToCloud();
             document.getElementById("quick-edit-modal").classList.add("hidden");
           }
-        };
+        });
       }
 
       function showScreen(name) {
