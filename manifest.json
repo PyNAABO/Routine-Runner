@@ -1,0 +1,21 @@
+{
+  "name": "Routine Runner",
+  "short_name": "Runner",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://iili.io/feGbUzX.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://iili.io/feGbUzX.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
