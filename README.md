@@ -1,109 +1,117 @@
-# 📅 Routine Runner
+# 📅 Routine Runner (RR)
 
-A distraction-free, privacy-focused progressive web app (PWA) designed to execute daily routines with precision. It parses simple text-based schedules into an interactive, synchronized interface, reducing cognitive load during high-focus periods.
+A distraction-free, privacy-focused Progressive Web App (PWA) designed to execute daily routines with precision. It parses simple text-based schedules into an interactive, synchronized interface, reducing cognitive load during high-focus periods.
 
 ## 📖 Project Overview
 
-Routine Runner solves the "cold start" problem of daily habits. Instead of managing complex databases or rigid calendar entries, it accepts a human-readable text block (e.g., 🔕 Alarm Off `@05:00`) and converts it into a live, state-managed workflow.
+Routine Runner solves the "cold start" problem of daily habits. Instead of managing complex databases, it accepts a human-readable text block (e.g., 🔕 Alarm Off `@05:00`) and converts it into a live, state-managed workflow.
+
+---
 
 ### Key Features
 
-- **Natural Language Parsing:** Type your routine in plain text; the app handles the logic.  
-- **Live Synchronization:** Uses Firebase Firestore to sync state instantly between devices (e.g., Phone ↔ Laptop).  
-- **Focus Mode:** Displays only the current task to prevent overwhelm.  
-- **Wake Lock:** Prevents device sleep during long tasks (reading, studying, prayer).
+- **Natural Language Parsing:** Type your routine in plain text.
+- **Live Synchronization:** Instantly syncs state between Phone & Laptop (using Firestore).
+- **Continuous Alarms:** Optional looping alarms for critical time gates.
+- **Mobile-First PWA:** Installable on Android/iOS (full-screen, no address bar).
+- **Wake Lock:** Keeps the screen on during tasks.
 
-## 🛠 Tech Stack
+---
 
-- **Frontend:** HTML5, Vanilla JavaScript (ES6+).  
-- **Styling:** Tailwind CSS (via CDN for lightweight loading).  
-- **Backend / Database:** Firebase Firestore (NoSQL).  
-- **Auth:** Firebase Authentication (Google Sign-In).  
-- **Hosting:** GitHub Pages.
+## ⚠️ Critical Setup Guide (Read this first)
 
-## ⚙️ Core Logic & Syntax
+**If you fork this repository, you MUST configure Firebase correctly, or the app may fail silently or show "Permission Denied" errors.**
 
-The app features a custom parser that interprets the following syntax from the user's input:
+### 1) Firebase Authentication (The "Domain" Trap)
 
-| Syntax | Description | Behavior |
-| -------- | ------------- | ---------- |
-| `@HH:MM` | Hard Start | Blocks progress until the specific time is reached. Triggers an alarm. |
-| `[Xm]` | Duration | Starts a countdown timer (e.g., `[20m]`) upon task activation. |
-| `till HH:MM` | End Constraint | Calculates remaining time until the target hour and runs a countdown. |
-| `==Text==` | Priority | Visually highlights the task (Gold/Bold) for critical habits. |
-| Standard Text | Task | A simple checkbox item. |
+1. Open Firebase Console → **Authentication → Sign-in method**.
+2. Enable **Google** as a sign-in provider.
+3. Go to **Authentication → Settings → Authorized domains** and add your hosting domain(s):
+   - Add `localhost` and `127.0.0.1` for local testing.
+   - Add `yourusername.github.io` (or your custom domain) for GitHub Pages.
 
-### Example Input
+> If you don't add authorized domains, the Google popup will close immediately and sign-in will fail.
 
-```text
-🔕 Alarm Off @05:00
-💧 Drink Water
-🪥 Brush [2m]
-📚 Deep Work: till 07:00
+### 2) Firestore Database (The "Rules" Trap)
+
+1. Open **Firestore Database → Create database** and choose **Production mode** (or test if you know what you're doing).
+2. After the DB is created, open the **Rules** tab and replace the defaults with the following rules (then **Publish**):
+
+```groovy
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
 ```
 
-## 🚀 Setup & Installation
+> Using these rules ensures only authenticated users can read/write. Misconfigured rules are the most common cause of "Permission Denied".
 
-To run this project locally or fork it for your own use:
+---
 
-1. **Clone the repository**
+## 🚀 Installation & Usage
+
+Choose one of the following options:
+
+### Option A — Use the Live App
+
+Visit the GitHub Pages deployment: (add your deployment link here).
+
+### Option B — Self-host locally
+
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/yourusername/routine-runner.git
 ```
 
-### Firebase Setup
+1. Get your Firebase config:
 
-- Create a project in the Firebase Console.  
-- Enable Authentication (Google Sign-In).  
-- Enable Cloud Firestore (create a database in production or test mode as appropriate).  
-- Copy your web app configuration keys (JSON object).
+- In Firebase Console → **Project settings → General → Your apps → Web App**, copy the `firebaseConfig` JSON object.
 
-**Configuration:**
+1. Connect the app:
 
-- Create a file named `config.js` in the project root (add it to `.gitignore` to avoid committing secrets).
-- Add your Firebase configuration:
+- Open the app and go to the **"Connect Database"** screen.
+- Recommended (secure): Create a **Secret Gist** on GitHub containing your `firebaseConfig` JSON, click **Raw**, copy the URL, and paste it into the app.
+- Alternative (quick): Paste the JSON directly into the provided text area.
 
-```javascript
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+---
 
-export default firebaseConfig;
-```
+## 📱 Syntax Guide
 
-#### Run & Connect
+The app interprets specific patterns in your text. Use the table below for reference.
 
-- Open `index.html` in your browser.  
-- You will see a **"Connect Database"** setup screen.
+| Syntax | Behavior | Example |
+| -------- | ---------- | --------- |
+| `@HH:MM` | **Hard Gate** — blocks progress until the time is reached; optional looping alarm | `Wake Up @05:00` |
+| `[Xm]` | **Timer** — starts a countdown; alarm loops when finished | `Brush [2m]` |
+| `till HH:MM` | **Till** — calculates remaining time until the target and runs a countdown | `Study: till 07:00` |
+| `==Text==` | **Highlight** — marked as high priority with a golden border | `==Tahajjud==` |
+| Emoji at start | **Icon** — first emoji becomes the task icon | `💧 Drink Water` |
 
-Options to provide configuration:
+---
 
-- **Option A (Direct):** Paste your Firebase JSON object directly into the text area.  
-- **Option B (Secure Gist):**
-  1. Create a **Secret Gist** on GitHub containing your config JSON.  
-  2. Click the **Raw** button on the gist.  
-  3. Copy the URL and paste it into the app.
+## 📲 PWA Installation
 
-#### Sync
+To get the full-screen experience on mobile:
 
-Repeat the Run & Connect step on any new device (Phone/Laptop) to link them to the same database.
+1. Open the site in Chrome (Android) or Safari (iOS).
+2. Tap Menu (3 dots) or Share.
+3. Tap **"Add to Home Screen"** (Android) or **"Add to Home Screen"** (iOS) / **Install App**.
 
-## 📱 Mobile Support
+---
 
-The application is designed with a *mobile-first* approach, optimized for touch targets and small screens (tested on Samsung Galaxy M series). It utilizes the Screen Wake Lock API to maintain visibility during hands-free tasks.
+## 🛠 Tech Stack
 
-## 🤝 Contributing
+- **Frontend:** HTML5, Vanilla JS, Tailwind CSS
+- **Backend:** Firebase Authentication & Firestore
+- **Hosting:** GitHub Pages
 
-Contributions are welcome. Please open an issue to discuss proposed changes or feature requests.
+---
 
 ## 📄 License
 
-This project is open source and available under the MIT License.
-
----
+MIT License
