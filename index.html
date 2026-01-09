@@ -905,13 +905,19 @@
 
             // 1. Logic Pre-processor (IF/ELSE)
             if (rawLine.startsWith("IF:")) {
-              const parts = rawLine.split("::");
-              if (parts.length >= 2) {
-                const condition = parts[0].substring(3); // Remove "IF:"
-                const mainTask = parts[1];
-                const elsePart = rawLine.includes("| ELSE::")
-                  ? rawLine.split("| ELSE::")[1]
-                  : null;
+              const firstSeparator = rawLine.indexOf("::");
+              if (firstSeparator !== -1) {
+                const condition = rawLine.substring(3, firstSeparator); // Remove "IF:"
+                const remainder = rawLine.substring(firstSeparator + 2);
+
+                let mainTask = remainder;
+                let elsePart = null;
+
+                if (remainder.includes("| ELSE::")) {
+                  const elseSplit = remainder.split("| ELSE::");
+                  mainTask = elseSplit[0];
+                  elsePart = elseSplit[1];
+                }
 
                 if (checkCondition(condition)) {
                   rawLine = mainTask;

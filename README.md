@@ -74,10 +74,10 @@ cd Routine-Runner
 
 #### **Step 2: Firebase Setup**
 
-1.  **Create Firebase Project**: Go to [Firebase Console](https://console.firebase.google.com/).
-2.  **Enable Authentication**: Enable **Google** provider in Authentication settings.
-3.  **Setup Firestore**: Create a database in **Production mode**.
-4.  **Security Rules**: Allow read/write for authenticated users.
+1. **Create Firebase Project**: Go to [Firebase Console](https://console.firebase.google.com/).
+2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
+3. **Setup Firestore**: Create a database in **Production mode**.
+4. **Security Rules**: Allow read/write for authenticated users.
 
 #### **Step 3: Deploy**
 
@@ -89,9 +89,9 @@ python -m http.server 8000
 
 #### **Step 4: Connect App**
 
-1.  Open the app.
-2.  Go to **"Connect Database"**.
-3.  Paste your Firebase Config JSON.
+1. Open the app.
+2. Go to **"Connect Database"**.
+3. Paste your Firebase Config JSON.
 
 ---
 
@@ -102,13 +102,13 @@ The app uses a powerful bracket-based syntax. Write your routine as a plain text
 ### 🎯 **Core Syntax Patterns**
 
 | Syntax      | Type                 | Behavior           | Example                                 |
-| :---------- | :------------------- | :----------------- | :-------------------------------------- | ---- | ----------- |
+| :---------- | :------------------- | :----------------- | :-------------------------------------- |
 | `[@HH:MM]`  | **Start At** (Gate)  | Blocks until time  | `Wake up [@06:00]`                      |
 | `[=>HH:MM]` | **End By** (Till)    | Count down to time | `Work [=>17:00]`                        |
 | `[Xm]`      | **Duration** (Timer) | Timer for X mins   | `Read [30m]`                            |
 | `==Text==`  | **Priority**         | Golden border      | `==Workout== [30m]`                     |
 | `IF:DAY::`  | **Condition**        | Only show on Day   | `IF:SUN::Relax`                         |
-| `           | ELSE::`              | **Else**           | Fallback task                           | `... | ELSE::Work` |
+| `\| ELSE::` | **Else**             | Fallback task      | `... \| ELSE::Work`                     |
 | `[http...]` | **Link**             | "Open Link" button | `Meeting [https://meet.google.com/abc]` |
 
 ### 📋 **Complete Routine Example**
