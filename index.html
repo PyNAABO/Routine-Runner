@@ -16,7 +16,7 @@
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-    <link rel="icon" href="https://iili.io/feNCCNV.png" />
+    <link rel="icon" href="assets/RR.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link
@@ -29,11 +29,12 @@
       /* Base Variables */
       :root {
         --bg-body: #0f172a;
-        --bg-card: #1e293b;
+        --bg-card: rgba(30, 41, 59, 0.7);
         --text-main: #e2e8f0;
         --text-muted: #94a3b8;
-        --border: #334155;
+        --border: rgba(255, 255, 255, 0.08);
         --accent: #059669; /* Emerald 600 */
+        --glass: blur(12px);
       }
 
       /* Light Mode Overrides */
@@ -52,10 +53,18 @@
         color: var(--text-main);
         overscroll-behavior-y: none;
         transition: background-color 0.3s ease, color 0.3s ease;
+        background-image: radial-gradient(
+          circle at 0% 0%,
+          #1e293b 0%,
+          #0f172a 50%
+        );
+        background-attachment: fixed;
       }
 
       .bg-card-custom {
         background-color: var(--bg-card);
+        backdrop-filter: var(--glass);
+        -webkit-backdrop-filter: var(--glass);
       }
       .text-muted-custom {
         color: var(--text-muted);
@@ -132,7 +141,7 @@
     >
       <div class="mb-6 flex flex-col items-center">
         <img
-          src="https://iili.io/feNCCNV.png"
+          src="assets/RR.png"
           class="h-24 w-24 object-contain mb-4 drop-shadow-2xl"
           alt="Logo"
         />
@@ -170,7 +179,7 @@
       >
         <div class="flex items-center gap-3">
           <img
-            src="https://iili.io/feNCCNV.png"
+            src="assets/RR.png"
             class="h-8 w-8 object-contain cursor-pointer active:scale-95 transition"
             id="home-logo-btn"
             alt="RR Logo"
@@ -563,6 +572,12 @@
                 >
                   +5m
                 </button>
+                <button
+                  id="pause-btn"
+                  class="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/50 text-xs text-yellow-500 hover:bg-yellow-500/20"
+                >
+                  <i class="fas fa-pause"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -616,7 +631,7 @@
 
       // CONFIG
       const CONFIG_KEY = "rr_firebase_config";
-      const ALARM_FILE = "iphone_alarm.mp3";
+      const ALARM_FILE = "assets/iphone_alarm.mp3";
 
       // DOM
       const screens = {
@@ -664,6 +679,7 @@
           darkMode: true,
           autoAdvance: false,
         },
+        isPaused: false,
       };
       let app, auth, db, user;
       let timerInterval, alarmLoopInterval, wakeLock;
@@ -947,9 +963,12 @@
               }
             });
           }
-        } else if (task.type === "timer") {
+          appState.isPaused = false;
+          updatePauseBtn();
+          document.getElementById("pause-btn").classList.remove("hidden");
           startCountDown(task.meta);
         } else if (task.type === "till") {
+          document.getElementById("pause-btn").classList.add("hidden");
           const target = getNextOccurrence(task.meta);
           const diffSeconds = Math.floor((target - new Date()) / 1000);
           if (diffSeconds > 0) startCountDown(diffSeconds);
@@ -988,7 +1007,26 @@
 
       function startTimerCheck(cb) {
         clearInterval(timerInterval);
-        timerInterval = setInterval(cb, 1000);
+        timerInterval = setInterval(() => {
+          if (!appState.isPaused) cb();
+        }, 1000);
+      }
+
+      function togglePause() {
+        appState.isPaused = !appState.isPaused;
+        updatePauseBtn();
+      }
+
+      function updatePauseBtn() {
+        const btn = document.getElementById("pause-btn");
+        if (!btn) return;
+        if (appState.isPaused) {
+          btn.innerHTML = '<i class="fas fa-play"></i>';
+          display.timerVal.classList.add("opacity-50");
+        } else {
+          btn.innerHTML = '<i class="fas fa-pause"></i>';
+          display.timerVal.classList.remove("opacity-50");
+        }
       }
 
       function startAlarmLoop() {
@@ -1145,6 +1183,7 @@
           stopAlarm();
           clearInterval(timerInterval);
         });
+        onClick("pause-btn", togglePause);
 
         // SETTINGS
         toggles.theme.addEventListener("change", (e) => {

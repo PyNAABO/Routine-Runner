@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Routine Runner Logo](https://iili.io/feNCCNV.png)
+![Routine Runner Logo](assets/RR.png)
 
 **A distraction-free, privacy-focused Progressive Web App (PWA)** designed to execute daily routines with precision. It parses simple text-based schedules into an interactive, synchronized interface, reducing cognitive load during high-focus periods.
 
@@ -53,9 +53,10 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 - **Touch Controls**: Large buttons and gestures for mobile use
 - **Wake Lock**: Keeps screen active during timed tasks
 
-### 🔔 **Smart Notifications**
+### 🔔 **Smart Notifications & Controls**
 
 - **Looping Alarms**: Audio alerts for time-sensitive tasks
+- **Pause/Resume**: Pause functionality for active timers
 - **Auto-Advance**: Optional progression through routines
 - **Visual Feedback**: Clear progress indicators and status updates
 - **Flexible Controls**: Manual override when needed
@@ -73,7 +74,7 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 ## ⚙️ Quick Start
 
 ### 🚀 **Option A — Try the Live Demo**
->
+
 > **Note**: The demo uses a shared Firebase instance. For personal use, follow the self-hosting guide.
 
 Visit: [Deploy your own instance](#-option-b--self-host-in-5-minutes)
@@ -90,10 +91,12 @@ cd Routine-Runner
 #### **Step 2: Firebase Setup**
 
 1. **Create Firebase Project**
+
    - Go to [Firebase Console](https://console.firebase.google.com/)
    - Click "Add project" and follow the setup wizard
 
 2. **Enable Authentication**
+
    - Navigate to **Authentication → Sign-in method**
    - Enable **Google** provider
    - Add your domain to **Authorized domains**:
@@ -144,7 +147,7 @@ python -m http.server 8000
    ```
    Authentication → Settings → Authorized domains → Add:
    - localhost
-   - 127.0.0.1  
+   - 127.0.0.1
    - your-username.github.io
    - your-custom-domain.com
    ```
@@ -189,7 +192,7 @@ const firebaseConfig = {
   projectId: "your-project-id",
   storageBucket: "your-project.appspot.com",
   messagingSenderId: "123456789",
-  appId: "your-app-id"
+  appId: "your-app-id",
 };
 ```
 
@@ -203,13 +206,13 @@ The app uses a simple, intuitive syntax that you can learn in minutes. Write you
 
 ### 🎯 **Core Syntax Patterns**
 
-| Syntax | Type | Behavior | Example |
-|--------|------|----------|---------|
-| `@HH:MM` | **Time Gate** | Blocks progress until specified time | `🌅 Morning Routine @06:00` |
-| `[Xm]` | **Timer** | Countdown for X minutes | `📚 Deep Work [45m]` |
-| `till HH:MM` | **Till Timer** | Countdown until specific time | `💼 Work till 17:00` |
-| `==Text==` | **Priority** | Golden border for high importance | `==🏋️ Workout==` |
-| `🔥 Emoji` | **Icon** | First emoji becomes task icon | `💧 Drink Water` |
+| Syntax       | Type           | Behavior                             | Example                     |
+| ------------ | -------------- | ------------------------------------ | --------------------------- |
+| `@HH:MM`     | **Time Gate**  | Blocks progress until specified time | `🌅 Morning Routine @06:00` |
+| `[Xm]`       | **Timer**      | Countdown for X minutes              | `📚 Deep Work [45m]`        |
+| `till HH:MM` | **Till Timer** | Countdown until specific time        | `💼 Work till 17:00`        |
+| `==Text==`   | **Priority**   | Golden border for high importance    | `==🏋️ Workout==`            |
+| `🔥 Emoji`   | **Icon**       | First emoji becomes task icon        | `💧 Drink Water`            |
 
 ### 📋 **Complete Routine Example**
 
@@ -249,7 +252,7 @@ The app uses a simple, intuitive syntax that you can learn in minutes. Write you
 
 ### **iOS Installation**
 
-1. Open Safari and navigate to your Routine Runner URL  
+1. Open Safari and navigate to your Routine Runner URL
 2. Tap the **Share** button (square with arrow)
 3. Scroll down and tap **"Add to Home Screen"**
 4. Tap **"Add"** to confirm
