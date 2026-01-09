@@ -313,31 +313,55 @@
           </div>
 
           <!-- Danger Zone -->
-          <div class="space-y-3 mt-auto border-t border-custom pt-6">
+          <div class="space-y-4 mt-auto border-t border-custom pt-6">
+            <!-- Refresh -->
             <button
               id="refresh-btn"
-              class="w-full py-3 rounded-lg text-muted-custom hover:bg-slate-700/10 text-sm"
+              class="w-full flex justify-between items-center p-4 border border-custom rounded-xl hover:bg-slate-700/10 transition"
             >
-              Refresh App
+              <div class="flex items-center gap-3">
+                <i class="fas fa-sync-alt text-blue-400"></i>
+                <span class="font-medium">Refresh App</span>
+              </div>
+              <i class="fas fa-chevron-right text-xs text-muted-custom"></i>
             </button>
+
+            <!-- Reset Day -->
             <button
               id="reset-day-btn"
-              class="w-full py-3 rounded-lg text-yellow-500 hover:bg-yellow-500/10 text-sm"
+              class="w-full flex justify-between items-center p-4 border border-custom rounded-xl hover:bg-yellow-500/10 transition group"
             >
-              Reset Day Progress
+              <div class="flex items-center gap-3">
+                <i class="fas fa-undo text-yellow-500"></i>
+                <span class="font-medium text-yellow-500"
+                  >Reset Day Progress</span
+                >
+              </div>
+              <i
+                class="fas fa-exclamation-triangle text-xs text-yellow-500 opacity-50 group-hover:opacity-100"
+              ></i>
             </button>
+
+            <!-- Sign Out -->
             <button
               id="settings-logout-btn"
-              class="w-full py-3 rounded-lg text-red-500 hover:bg-red-500/10 font-bold"
+              class="w-full flex justify-between items-center p-4 border border-custom rounded-xl hover:bg-red-500/10 transition group"
             >
-              Sign Out
+              <div class="flex items-center gap-3">
+                <i class="fas fa-sign-out-alt text-red-500"></i>
+                <span class="font-bold text-red-500">Sign Out</span>
+              </div>
+              <i
+                class="fas fa-power-off text-xs text-red-500 opacity-50 group-hover:opacity-100"
+              ></i>
             </button>
-            <!-- Renamed ID to avoid duplicate -->
+
+            <!-- Disconnect -->
             <button
               id="settings-disconnect-btn"
-              class="w-full py-3 rounded-lg text-xs text-muted-custom underline hover:text-red-400"
+              class="w-full flex justify-center items-center py-2 text-xs text-muted-custom hover:text-red-400 transition"
             >
-              Disconnect Database
+              <i class="fas fa-unlink mr-2"></i> Disconnect Database
             </button>
           </div>
 
@@ -963,6 +987,7 @@
               }
             });
           }
+        } else if (task.type === "timer") {
           appState.isPaused = false;
           updatePauseBtn();
           document.getElementById("pause-btn").classList.remove("hidden");
