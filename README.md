@@ -138,13 +138,13 @@ python -m http.server 8000
 
 1. **Enable Google Sign-In**
 
-   ```
+   ```txt
    Firebase Console → Authentication → Sign-in method → Google → Enable
    ```
 
 2. **Configure Authorized Domains**
 
-   ```
+   ```txt
    Authentication → Settings → Authorized domains → Add:
    - localhost
    - 127.0.0.1
@@ -206,29 +206,26 @@ The app uses a simple, intuitive syntax that you can learn in minutes. Write you
 
 ### 🎯 **Core Syntax Patterns**
 
-| Syntax       | Type           | Behavior                             | Example                     |
-| ------------ | -------------- | ------------------------------------ | --------------------------- |
-| `@HH:MM`     | **Time Gate**  | Blocks progress until specified time | `🌅 Morning Routine @06:00` |
-| `[Xm]`       | **Timer**      | Countdown for X minutes              | `📚 Deep Work [45m]`        |
-| `till HH:MM` | **Till Timer** | Countdown until specific time        | `💼 Work till 17:00`        |
-| `==Text==`   | **Priority**   | Golden border for high importance    | `==🏋️ Workout==`            |
-| `🔥 Emoji`   | **Icon**       | First emoji becomes task icon        | `💧 Drink Water`            |
+| Syntax      | Type          | Behavior           | Example             |
+| :---------- | :------------ | :----------------- | :------------------ | ---- | ----------- |
+| `[@HH:MM]`  | **Start At**  | Blocks until time  | `Wake up [@06:00]`  |
+| `[=>HH:MM]` | **End By**    | Count down to time | `Work [=>17:00]`    |
+| `[Xm]`      | **Duration**  | Timer for X mins   | `Read [30m]`        |
+| `==Text==`  | **Priority**  | Golden border      | `==Workout== [30m]` |
+| `IF:DAY::`  | **Condition** | Only show on Day   | `IF:SUN::Relax`     |
+| `           | ELSE::`       | **Else**           | Fallback task       | `... | ELSE::Work` |
 
 ### 📋 **Complete Routine Example**
 
 ```text
-🌅 Morning Routine @06:00
-💧 Drink Water
-==🏋️ Quick Workout== [15m]
-🚿 Shower [10m]
-🍳 Breakfast till 07:00
-☕ Coffee & Journal [20m]
+🌅 Morning Routine [@06:00]
+IF:MON::Start Week Review [15m]
+IF:!SUN::==🏋️ Quick Workout== [20m]
+🚿 Shower [15m]
+🍳 Breakfast [=>08:00]
 💼 Deep Work Session 1 [90m]
-🍽️ Lunch till 12:30
-💼 Deep Work Session 2 [90m]
-🏃 Evening Run [30m]
-📚 Reading till 20:00
-🌙 Wind Down [30m]
+🍽️ Lunch [=>13:00]
+IF:FRI::🎉 Team Social [=>17:00] | ELSE::💼 Deep Work Session 2 [90m]
 ```
 
 ### 💡 **Advanced Tips**
@@ -356,7 +353,18 @@ rr_settings: {                   // User preferences
 
 ---
 
-## 🐛 **Troubleshooting**
+## 🚀 Roadmap & TODO
+
+Keep track of upcoming features and planned improvements. Feel free to suggest new ideas!
+
+- [ ] **Multiple Routines**: Support for switching between different routines (e.g., Weekdays vs. Weekends).
+- [ ] **Analytics Dashboard**: Visual charts and trends for habit consistency and completion rates.
+- [ ] **Fix Theme Issues**: Fix the inconsistencies when switching from one theme to the other.
+- [ ] **If, Else and If not Friday**: Implement these syntaxes to the routine. Else is optional.
+
+---
+
+## 🛠️ Troubleshooting
 
 ### **Common Issues**
 

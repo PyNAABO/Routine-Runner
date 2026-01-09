@@ -32,18 +32,18 @@
         --bg-card: rgba(30, 41, 59, 0.7);
         --text-main: #e2e8f0;
         --text-muted: #94a3b8;
-        --border: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.1);
         --accent: #059669; /* Emerald 600 */
-        --glass: blur(12px);
+        --glass: blur(16px);
       }
 
       /* Light Mode Overrides */
       .light-mode {
         --bg-body: #f1f5f9;
-        --bg-card: #ffffff;
-        --text-main: #1e293b;
+        --bg-card: rgba(255, 255, 255, 0.82);
+        --text-main: #1f2937;
         --text-muted: #64748b;
-        --border: #cbd5e1;
+        --border: rgba(0, 0, 0, 0.08); /* Softer border */
         --accent: #10b981; /* Emerald 500 */
       }
 
@@ -53,18 +53,32 @@
         color: var(--text-main);
         overscroll-behavior-y: none;
         transition: background-color 0.3s ease, color 0.3s ease;
-        background-image: radial-gradient(
-          circle at 0% 0%,
-          #1e293b 0%,
-          #0f172a 50%
-        );
         background-attachment: fixed;
+      }
+
+      /* Dynamic Backgrounds */
+      body:not(.light-mode) {
+        background-image: radial-gradient(
+          circle at 15% 50%,
+          #1e293b 0%,
+          #0f172a 80%
+        );
+      }
+      .light-mode body {
+        background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
       }
 
       .bg-card-custom {
         background-color: var(--bg-card);
         backdrop-filter: var(--glass);
         -webkit-backdrop-filter: var(--glass);
+      }
+      /* Fixed Utility Classes */
+      .bg-body {
+        background-color: var(--bg-body);
+      }
+      .text-main {
+        color: var(--text-main);
       }
       .text-muted-custom {
         color: var(--text-muted);
@@ -388,9 +402,10 @@
           </div>
           <textarea
             id="routine-input"
-            class="flex-1 bg-body text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-600 mb-4 border border-custom"
+            class="flex-1 text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-500 mb-4 border border-custom"
+            style="background-color: rgba(0, 0, 0, 0.2)"
             spellcheck="false"
-            placeholder="Enter routine..."
+            placeholder="Wake up [@06:30]&#10;Work [=>5:00 pm]&#10;Read [30m]"
           ></textarea>
           <div class="flex justify-between items-center">
             <p class="text-xs text-muted-custom">Auto-saves to cloud</p>
@@ -862,42 +877,100 @@
       }
 
       // --- LOGIC & RENDERER ---
+      // --- CONDITIONALS ---
+      function checkCondition(cond) {
+        const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        const today = days[new Date().getDay()];
+        if (cond.startsWith("!")) {
+            return today !== cond.substring(1);
+        }
+        return today === cond;
+      }
+
+
       function parseRoutine(text) {
         const lines = text.split("\n");
         return lines
           .map((line, index) => {
             if (line.trim() === "") return null;
+            let rawLine = line.trim();
+
+            // 1. Logic Pre-processor (IF/ELSE)
+            if (rawLine.startsWith("IF:")) {
+                const parts = rawLine.split("::");
+                if (parts.length >= 2) {
+                    const condition = parts[0].substring(3); // Remove "IF:"
+                    const mainTask = parts[1];
+                    const elsePart = rawLine.includes("| ELSE::") ? rawLine.split("| ELSE::")[1] : null;
+
+                    if (checkCondition(condition)) {
+                        rawLine = mainTask;
+                    } else if (elsePart) {
+                        rawLine = elsePart;
+                    } else {
+                        return null; // Skip this task
+                    }
+                }
+            }
+
             let type = "standard",
               meta = null,
-              cleanText = line;
+              cleanText = rawLine;
 
-            const timeMatch = line.match(/@(\d{1,2}:\d{2})/);
-            if (timeMatch) {
+            // 2. Bracket Syntax Parser
+            // [@HH:MM] - Gate
+            const gateMatch = rawLine.match(/\[@(\d{1,2}:\d{2})\]/);
+            if (gateMatch) {
               type = "gate";
-              meta = timeMatch[1];
-              cleanText = cleanText.replace(timeMatch[0], "").trim();
+              meta = gateMatch[1];
+              cleanText = cleanText.replace(gateMatch[0], "").trim();
             }
 
-            const durationMatch = line.match(/\[(\d+)m\]/i);
-            if (durationMatch) {
-              type = "timer";
-              meta = parseInt(durationMatch[1]) * 60;
-              cleanText = cleanText.replace(durationMatch[0], "").trim();
-            }
-
-            const tillMatch = line.match(/till\s+(\d{1,2}:\d{2})/i);
+            // [=>HH:MM] - Till
+            const tillMatch = rawLine.match(/\[=>(\d{1,2}:\d{2})\]/);
             if (tillMatch) {
               type = "till";
               meta = tillMatch[1];
               cleanText = cleanText.replace(tillMatch[0], "").trim();
             }
 
-            const highMatch = line.match(/==(.*?)==/);
+            // [Xm] - Timer
+            const durationMatch = rawLine.match(/\[(\d+)m\]/i);
+            if (durationMatch) {
+              type = "timer";
+              meta = parseInt(durationMatch[1]) * 60;
+              cleanText = cleanText.replace(durationMatch[0], "").trim();
+            }
+
+            const highMatch = rawLine.match(/==(.*?)==/);
             let isHigh = false;
             if (highMatch) {
               isHigh = true;
               cleanText = cleanText.replace(/==/g, "").trim();
+              cleanText = cleanText.replace(highMatch[1], highMatch[1]); // Keep text, remove brackets logic handled by replace above technically
+              cleanText = cleanText.replace(/==/g, ""); // Clean up
             }
+
+            const emojiMatch = cleanText.match(
+              /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
+            );
+            const icon = emojiMatch ? emojiMatch[0] : "✅";
+            // Final cleanup of cleanText to remove any # comments if user adds them
+            cleanText = cleanText.split("#")[0].trim();
+            const displayText = cleanText.replace(icon, "").trim();
+
+            return {
+              id: index,
+              raw: line,
+              text: displayText,
+              icon,
+              type,
+              meta,
+              isHigh,
+            };
+          })
+          .filter((t) => t !== null);
+      }
 
             const emojiMatch = cleanText.match(
               /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
