@@ -536,6 +536,15 @@
                   <h2 id="task-text" class="text-3xl font-bold leading-tight">
                     Task Name
                   </h2>
+                  <a
+                    id="task-link-btn"
+                    target="_blank"
+                    href="#"
+                    class="hidden inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition text-sm font-medium mt-4 cursor-pointer"
+                  >
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>Open Link</span>
+                  </a>
                 </div>
 
                 <!-- Timer -->
@@ -882,11 +891,10 @@
         const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
         const today = days[new Date().getDay()];
         if (cond.startsWith("!")) {
-            return today !== cond.substring(1);
+          return today !== cond.substring(1);
         }
         return today === cond;
       }
-
 
       function parseRoutine(text) {
         const lines = text.split("\n");
@@ -897,20 +905,22 @@
 
             // 1. Logic Pre-processor (IF/ELSE)
             if (rawLine.startsWith("IF:")) {
-                const parts = rawLine.split("::");
-                if (parts.length >= 2) {
-                    const condition = parts[0].substring(3); // Remove "IF:"
-                    const mainTask = parts[1];
-                    const elsePart = rawLine.includes("| ELSE::") ? rawLine.split("| ELSE::")[1] : null;
+              const parts = rawLine.split("::");
+              if (parts.length >= 2) {
+                const condition = parts[0].substring(3); // Remove "IF:"
+                const mainTask = parts[1];
+                const elsePart = rawLine.includes("| ELSE::")
+                  ? rawLine.split("| ELSE::")[1]
+                  : null;
 
-                    if (checkCondition(condition)) {
-                        rawLine = mainTask;
-                    } else if (elsePart) {
-                        rawLine = elsePart;
-                    } else {
-                        return null; // Skip this task
-                    }
+                if (checkCondition(condition)) {
+                  rawLine = mainTask;
+                } else if (elsePart) {
+                  rawLine = elsePart;
+                } else {
+                  return null; // Skip this task
                 }
+              }
             }
 
             let type = "standard",
@@ -942,6 +952,14 @@
               cleanText = cleanText.replace(durationMatch[0], "").trim();
             }
 
+            // [http...] - Link
+            const linkMatch = rawLine.match(/\[(https?:\/\/[^\]]+)\]/);
+            let link = null;
+            if (linkMatch) {
+              link = linkMatch[1];
+              cleanText = cleanText.replace(linkMatch[0], "").trim();
+            }
+
             const highMatch = rawLine.match(/==(.*?)==/);
             let isHigh = false;
             if (highMatch) {
@@ -966,25 +984,7 @@
               icon,
               type,
               meta,
-              isHigh,
-            };
-          })
-          .filter((t) => t !== null);
-      }
-
-            const emojiMatch = cleanText.match(
-              /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
-            );
-            const icon = emojiMatch ? emojiMatch[0] : "✅";
-            const displayText = cleanText.replace(icon, "").trim();
-
-            return {
-              id: index,
-              raw: line,
-              text: displayText,
-              icon,
-              type,
-              meta,
+              link,
               isHigh,
             };
           })
@@ -1023,6 +1023,17 @@
 
         display.taskText.innerText = task.text || "Untitled";
         display.taskIcon.innerText = task.icon;
+
+        // Link Button
+        const linkBtn = document.getElementById("task-link-btn");
+        if (task.link) {
+          linkBtn.href = task.link;
+          linkBtn.classList.remove("hidden");
+        } else {
+          linkBtn.classList.add("hidden");
+          linkBtn.href = "#";
+        }
+
         display.nextTask.innerText = nextTask
           ? `Next: ${nextTask.text}`
           : "Next: Finish Line";

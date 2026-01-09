@@ -357,10 +357,7 @@ rr_settings: {                   // User preferences
 
 Keep track of upcoming features and planned improvements. Feel free to suggest new ideas!
 
-- [ ] **Multiple Routines**: Support for switching between different routines (e.g., Weekdays vs. Weekends).
-- [ ] **Analytics Dashboard**: Visual charts and trends for habit consistency and completion rates.
-- [ ] **Fix Theme Issues**: Fix the inconsistencies when switching from one theme to the other.
-- [ ] **If, Else and If not Friday**: Implement these syntaxes to the routine. Else is optional.
+- [ ] **UI Improvements**: Improve the UI of the app.
 
 ---
 
