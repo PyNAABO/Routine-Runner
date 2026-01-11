@@ -743,6 +743,11 @@
           navigator.serviceWorker.register("sw.js").catch(console.error);
         }
 
+        // Check/Request Notification permission on load if already granted, otherwise wait for interaction
+        if ("Notification" in window && Notification.permission === "granted") {
+           // Ready
+        }
+
         const savedSettings = localStorage.getItem("rr_settings");
         if (savedSettings)
           appState.settings = {
@@ -1069,6 +1074,7 @@
               if (diff <= 0) {
                 clearInterval(timerInterval);
                 display.waitOverlay.classList.add("hidden");
+                sendNotification("Task Ready", `It's time for: ${task.text}`);
                 triggerCompletion();
               } else {
                 display.waitCount.innerText = formatTime(
@@ -1105,6 +1111,7 @@
           if (remaining <= 0) {
             clearInterval(timerInterval);
             triggerCompletion();
+            sendNotification("Timer Done", "Time is up!");
           }
         });
       }
@@ -1189,6 +1196,31 @@
           .padStart(2, "0")}`;
       }
 
+      // --- NOTIFICATIONS ---
+      function requestNotificationPermission() {
+        if ("Notification" in window && Notification.permission !== "granted") {
+          Notification.requestPermission();
+        }
+      }
+
+      function sendNotification(title, body) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          // Try Service Worker registration first for Android support
+          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then((registration) => {
+              registration.showNotification(title, {
+                body: body,
+                icon: "assets/RR.png",
+                vibrate: [200, 100, 200],
+              });
+            });
+          } else {
+            // Fallback
+            new Notification(title, { body, icon: "assets/RR.png" });
+          }
+        }
+      }
+
       async function requestWakeLock() {
         try {
           wakeLock = await navigator.wakeLock.request("screen");
@@ -1201,9 +1233,13 @@
 
       function setupEventListeners() {
         // Helper for safe binding
-        const onClick = (id, fn) => {
           const el = document.getElementById(id);
-          if (el) el.onclick = fn;
+          if (el) {
+             el.onclick = (e) => {
+                requestNotificationPermission(); // Try requesting on any click
+                fn(e);
+             };
+          }
         };
 
         // NAV
