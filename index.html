@@ -1204,20 +1204,38 @@
       }
 
       function sendNotification(title, body) {
+        console.log(
+          "sendNotification called:",
+          title,
+          body,
+          "Permission:",
+          Notification.permission
+        );
         if ("Notification" in window && Notification.permission === "granted") {
-          // Try Service Worker registration first for Android support
-          if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-            navigator.serviceWorker.ready.then((registration) => {
-              registration.showNotification(title, {
-                body: body,
-                icon: "assets/RR.png",
-                vibrate: [200, 100, 200],
-              });
-            });
-          } else {
-            // Fallback
+          // Try direct Notification API first (works on desktop)
+          try {
+            console.log("Sending via Notification API");
             new Notification(title, { body, icon: "assets/RR.png" });
+          } catch (e) {
+            // If direct Notification fails (e.g., on some mobile browsers), use ServiceWorker
+            console.log("Direct notification failed, trying ServiceWorker:", e);
+            if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+              navigator.serviceWorker.ready
+                .then((registration) => {
+                  console.log("Sending via ServiceWorker");
+                  registration.showNotification(title, {
+                    body: body,
+                    icon: "assets/RR.png",
+                    vibrate: [200, 100, 200],
+                  });
+                })
+                .catch((err) => console.error("SW notification failed:", err));
+            }
           }
+        } else {
+          console.log(
+            "Notification permission not granted or API not available"
+          );
         }
       }
 
