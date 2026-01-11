@@ -745,7 +745,7 @@
 
         // Check/Request Notification permission on load if already granted, otherwise wait for interaction
         if ("Notification" in window && Notification.permission === "granted") {
-           // Ready
+          // Ready
         }
 
         const savedSettings = localStorage.getItem("rr_settings");
@@ -1233,12 +1233,13 @@
 
       function setupEventListeners() {
         // Helper for safe binding
+        const onClick = (id, fn) => {
           const el = document.getElementById(id);
           if (el) {
-             el.onclick = (e) => {
-                requestNotificationPermission(); // Try requesting on any click
-                fn(e);
-             };
+            el.onclick = (e) => {
+              requestNotificationPermission(); // Try requesting on any click
+              fn(e);
+            };
           }
         };
 
