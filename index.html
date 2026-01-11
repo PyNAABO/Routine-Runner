@@ -730,6 +730,7 @@
         isPaused: false,
       };
       let app, auth, db, user;
+      let isSaving = false; // Flag to prevent sync overwrites during save
       let timerInterval, alarmLoopInterval, wakeLock;
       const alarmAudio = new Audio(ALARM_FILE);
       alarmAudio.loop = true;
@@ -814,6 +815,7 @@
           docRef,
           (docSnap) => {
             showSyncStatus("Synced", "emerald");
+            if (isSaving) return; // Ignore sync while saving locally
             if (docSnap.exists()) {
               const data = docSnap.data();
               // Merge remote data
@@ -837,6 +839,7 @@
 
       async function saveStateToCloud() {
         if (!user) return;
+        isSaving = true;
         showSyncStatus("Saving...", "blue");
         try {
           await setDoc(
@@ -852,6 +855,8 @@
           showSyncStatus("Synced", "emerald");
         } catch (e) {
           showSyncStatus("Error!", "red");
+        } finally {
+          isSaving = false;
         }
       }
 
@@ -1315,7 +1320,12 @@
         // ACTIONS
         onClick("save-routine-btn", () => {
           appState.rawRoutine = inputs.routine.value;
-          appState.currentTaskIndex = 0;
+          // Parse new routine to check task count
+          const newTasks = parseRoutine(appState.rawRoutine);
+          // Only reset to 0 if current index exceeds new task count
+          if (appState.currentTaskIndex >= newTasks.length) {
+            appState.currentTaskIndex = 0;
+          }
           saveStateToCloud();
           views.edit.classList.add("translate-x-full");
           parseAndRender();
