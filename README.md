@@ -130,6 +130,52 @@ IF:FRI::🎉 Team Social [=>17:00] | ELSE::💼 Deep Work Session 2 [90m]
 - **Negation**: Use `!` (e.g., `!SUN` means "Not Sunday").
 - **Emojis**: The first emoji in a line becomes the task icon.
 
+### 🔀 **Sub-Routines (Nested Tasks)**
+
+Group related tasks under a parent using colon and dash syntax:
+
+```text
+JOURNAL:
+- ❤️ Gratitude
+- 🎯 Goals
+- 📖 Reflection
+
+📚 Study [30m]
+```
+
+The parent title appears at the bottom of the card as `JOURNAL [1/3]` while each sub-task is shown individually.
+
+---
+
+## 📂 Multiple Routines
+
+Manage multiple named routines with automatic or manual selection.
+
+### Creating Routines
+
+1. Go to **Settings** → **Manage Routines**
+2. Click **Add New Routine**
+3. Give it a name and add tasks
+4. Set when it should run:
+   - **Always (Default)**: Runs when no other routine matches
+   - **Specific Days**: Mon, Wed, Fri, etc.
+   - **Specific Dates**: 1st, 15th of each month
+   - **Pattern**: First Friday, Last Monday, etc.
+   - **Manual Only**: Only when you explicitly select it
+
+### Auto-Selection
+
+On app load, the routine is automatically selected based on:
+
+1. Check each routine's conditions against today's date
+2. First matching routine is activated
+3. Falls back to the default routine if no match
+
+### Quick Switch
+
+- Tap the play icon (▶) next to any routine to switch immediately
+- Current routine shown in Settings under "Active Routine"
+
 ---
 
 ## 📱 PWA Installation
@@ -150,6 +196,23 @@ IF:FRI::🎉 Team Social [=>17:00] | ELSE::💼 Deep Work Session 2 [90m]
 ### **Data Structure**
 
 ```javascript
+// App State (synced to Firestore)
+{
+  routines: [
+    {
+      id: "routine-uuid",
+      name: "Daily Routine",
+      content: "📚 Study\n🪥 Brush",
+      isDefault: true,
+      conditions: { type: "weekday", weekdays: [1, 3, 5] } // or null
+    }
+  ],
+  activeRoutineId: "routine-uuid",
+  currentTaskIndex: 0,
+  currentSubRoutineIndex: 0,
+  history: { "2024-01-15": [...] }
+}
+
 // Parsed Task Object
 {
   id: 0,
@@ -158,7 +221,9 @@ IF:FRI::🎉 Team Social [=>17:00] | ELSE::💼 Deep Work Session 2 [90m]
   type: "gate",           // gate | timer | till | standard
   meta: "06:00",          // Time or duration
   isHigh: false,          // Priority flag
-  link: "https://..."     // Optional URL
+  link: "https://...",    // Optional URL
+  isSubRoutineParent: false,
+  subRoutines: []         // Nested tasks for sub-routines
 }
 ```
 

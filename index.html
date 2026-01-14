@@ -117,6 +117,143 @@
       .toggle-checkbox:checked + .toggle-label {
         background-color: #10b981;
       }
+
+      /* Fixed Bottom Controls Bar */
+      #controls-bar {
+        background-color: var(--bg-card);
+        backdrop-filter: var(--glass);
+        -webkit-backdrop-filter: var(--glass);
+        border-top: 1px solid var(--border);
+        padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+      }
+
+      /* Landscape Mode Styles */
+      @media (orientation: landscape) and (max-height: 500px) {
+        /* Compact header */
+        header {
+          padding: 0.5rem 1rem;
+        }
+        header img {
+          height: 1.5rem;
+          width: 1.5rem;
+        }
+
+        /* Run view becomes horizontal */
+        #run-view {
+          flex-direction: row !important;
+        }
+
+        /* Scrollable content takes most of the space */
+        #run-view > div:first-child {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow-y: auto;
+        }
+
+        /* Task card area adjustments */
+        #active-task-container {
+          max-width: 100%;
+          padding: 0.5rem 1rem;
+          gap: 0.5rem;
+        }
+
+        #task-card {
+          padding: 1rem 1.5rem;
+        }
+
+        #task-icon {
+          font-size: 2.5rem !important;
+          margin-bottom: 0.25rem !important;
+        }
+
+        #task-text {
+          font-size: 1.25rem !important;
+        }
+
+        #timer-val {
+          font-size: 2rem !important;
+        }
+
+        .up-next-container {
+          display: none;
+        }
+
+        /* Controls bar becomes side panel */
+        #controls-bar {
+          width: 140px;
+          min-width: 140px;
+          height: auto;
+          align-self: stretch;
+          border-top: none;
+          border-left: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 1rem !important;
+        }
+
+        #controls-bar .controls-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          max-width: 100%;
+        }
+
+        #controls-bar .controls-grid button {
+          width: 100%;
+        }
+
+        #controls-bar #done-btn {
+          order: -1;
+          padding: 1.5rem 1rem;
+          grid-column: span 1;
+        }
+
+        #controls-bar #skip-btn,
+        #controls-bar #undo-btn {
+          padding: 0.75rem;
+          grid-column: span 1;
+        }
+
+        #controls-bar #timer-controls {
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        /* Hide progress bar in landscape to save space */
+        #active-task-container > div:first-child {
+          height: 0.25rem;
+        }
+      }
+
+      /* Very small landscape (phone in landscape) */
+      @media (orientation: landscape) and (max-height: 400px) {
+        header {
+          padding: 0.25rem 0.75rem;
+        }
+
+        #task-icon {
+          font-size: 2rem !important;
+        }
+
+        #task-text {
+          font-size: 1.1rem !important;
+        }
+
+        #timer-val {
+          font-size: 1.5rem !important;
+        }
+
+        #controls-bar {
+          width: 120px;
+          min-width: 120px;
+          padding: 0.5rem !important;
+        }
+      }
     </style>
   </head>
   <body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom">
@@ -250,11 +387,27 @@
           <!-- Main Actions -->
           <div class="grid grid-cols-2 gap-4 mb-6">
             <button
-              id="edit-routine-btn"
-              class="col-span-2 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg flex items-center justify-center gap-2"
+              id="manage-routines-btn"
+              class="col-span-2 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg flex items-center justify-center gap-2"
             >
-              <i class="fas fa-pen"></i> Edit Routine
+              <i class="fas fa-layer-group"></i> Manage Routines
             </button>
+            <button
+              id="edit-routine-btn"
+              class="col-span-2 py-3 rounded-xl border border-custom hover:bg-slate-700/10 text-muted-custom font-medium flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-pen"></i> Edit Current Routine
+            </button>
+          </div>
+
+          <!-- Current Routine Indicator -->
+          <div class="mb-6 p-3 rounded-lg border border-custom bg-card-custom">
+            <p class="text-xs text-muted-custom uppercase tracking-wider mb-1">
+              Active Routine
+            </p>
+            <p id="active-routine-name" class="font-bold text-emerald-400">
+              Daily Routine
+            </p>
           </div>
 
           <!-- Log Management -->
@@ -418,6 +571,232 @@
           </div>
         </div>
 
+        <!-- MANAGE ROUTINES VIEW -->
+        <div
+          id="manage-routines-view"
+          class="absolute inset-0 bg-card-custom flex flex-col p-4 transition-transform duration-300 translate-x-full z-40"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Manage Routines</h2>
+            <button
+              id="close-manage-routines-btn"
+              class="text-muted-custom hover:text-white"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <!-- Routine List -->
+          <div id="routine-list" class="flex-1 overflow-y-auto space-y-3 mb-4">
+            <!-- Routines will be rendered here dynamically -->
+          </div>
+
+          <!-- Add New Routine Button -->
+          <button
+            id="add-routine-btn"
+            class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-plus"></i> Add New Routine
+          </button>
+        </div>
+
+        <!-- ROUTINE EDITOR MODAL -->
+        <div
+          id="routine-editor-modal"
+          class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col p-4 overflow-y-auto"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 id="routine-editor-title" class="text-xl font-bold text-white">
+              New Routine
+            </h2>
+            <button
+              id="close-routine-editor-btn"
+              class="text-slate-400 hover:text-white"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <!-- Routine Name -->
+          <div class="mb-4">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >Routine Name</label
+            >
+            <input
+              type="text"
+              id="routine-name-input"
+              class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none"
+              placeholder="e.g., Morning Routine"
+            />
+          </div>
+
+          <!-- Routine Content -->
+          <div class="mb-4 flex-1 min-h-[200px] flex flex-col">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >Tasks</label
+            >
+            <textarea
+              id="routine-content-input"
+              class="flex-1 bg-slate-800 text-white p-3 rounded-lg mono text-sm resize-none focus:outline-none border border-slate-700 focus:border-blue-500"
+              placeholder="📚 Study&#10;🪥 Brush [2m]&#10;💪 Gym"
+            ></textarea>
+          </div>
+
+          <!-- Condition Type -->
+          <div class="mb-4">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >When to Run</label
+            >
+            <select
+              id="routine-condition-type"
+              class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none"
+            >
+              <option value="default">Always (Default)</option>
+              <option value="weekday">Specific Days of Week</option>
+              <option value="date">Specific Dates of Month</option>
+              <option value="pattern">Pattern (First Friday, etc.)</option>
+              <option value="manual">Manual Only</option>
+            </select>
+          </div>
+
+          <!-- Weekday Selector (shown when condition is weekday) -->
+          <div id="weekday-selector" class="mb-4 hidden">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >Select Days</label
+            >
+            <div class="grid grid-cols-7 gap-1">
+              <button
+                type="button"
+                data-day="0"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Sun
+              </button>
+              <button
+                type="button"
+                data-day="1"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Mon
+              </button>
+              <button
+                type="button"
+                data-day="2"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Tue
+              </button>
+              <button
+                type="button"
+                data-day="3"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Wed
+              </button>
+              <button
+                type="button"
+                data-day="4"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Thu
+              </button>
+              <button
+                type="button"
+                data-day="5"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Fri
+              </button>
+              <button
+                type="button"
+                data-day="6"
+                class="weekday-btn py-2 rounded bg-slate-700 text-white text-xs hover:bg-blue-600"
+              >
+                Sat
+              </button>
+            </div>
+          </div>
+
+          <!-- Date Selector (shown when condition is date) -->
+          <div id="date-selector" class="mb-4 hidden">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >Select Dates (comma-separated)</label
+            >
+            <input
+              type="text"
+              id="routine-dates-input"
+              class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none"
+              placeholder="e.g., 1, 15, 28"
+            />
+          </div>
+
+          <!-- Pattern Selector (shown when condition is pattern) -->
+          <div id="pattern-selector" class="mb-4 hidden">
+            <label
+              class="block text-xs text-slate-400 uppercase tracking-wider mb-2"
+              >Select Pattern</label
+            >
+            <select
+              id="routine-pattern-input"
+              class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-700 focus:border-blue-500 outline-none"
+            >
+              <option value="first-sunday">First Sunday</option>
+              <option value="first-monday">First Monday</option>
+              <option value="first-tuesday">First Tuesday</option>
+              <option value="first-wednesday">First Wednesday</option>
+              <option value="first-thursday">First Thursday</option>
+              <option value="first-friday">First Friday</option>
+              <option value="first-saturday">First Saturday</option>
+              <option value="last-sunday">Last Sunday</option>
+              <option value="last-monday">Last Monday</option>
+              <option value="last-tuesday">Last Tuesday</option>
+              <option value="last-wednesday">Last Wednesday</option>
+              <option value="last-thursday">Last Thursday</option>
+              <option value="last-friday">Last Friday</option>
+              <option value="last-saturday">Last Saturday</option>
+            </select>
+          </div>
+
+          <!-- Set as Default -->
+          <div class="mb-6 flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="routine-is-default"
+              class="w-5 h-5 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500"
+            />
+            <label for="routine-is-default" class="text-white"
+              >Set as default routine</label
+            >
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              id="delete-routine-btn"
+              class="py-3 bg-red-600/20 text-red-400 rounded-lg border border-red-600/50 font-bold hover:bg-red-600/30 hidden"
+            >
+              <i class="fas fa-trash mr-2"></i>Delete
+            </button>
+            <button
+              id="cancel-routine-editor-btn"
+              class="py-3 bg-slate-700 text-white rounded-lg font-bold hover:bg-slate-600"
+            >
+              Cancel
+            </button>
+            <button
+              id="save-routine-editor-btn"
+              class="py-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-500 col-span-1"
+            >
+              Save Routine
+            </button>
+          </div>
+        </div>
+
         <!-- LOG MANAGER MODAL -->
         <div
           id="log-manager-modal"
@@ -459,174 +838,188 @@
         </div>
 
         <!-- RUN VIEW -->
-        <div
-          id="run-view"
-          class="absolute inset-0 overflow-y-auto scroll-touch"
-        >
-          <div
-            class="min-h-full flex flex-col items-center justify-center p-6 pb-24"
-          >
-            <!-- Empty State -->
-            <div id="empty-state" class="text-center hidden">
-              <i class="fas fa-wind text-6xl text-slate-500 mb-4"></i>
-              <h2 class="text-xl font-bold">No Routine Set</h2>
-              <p class="text-muted-custom mt-2">
-                Go to Settings > Edit Routine.
-              </p>
-            </div>
-
-            <!-- Done State -->
-            <div id="all-done-state" class="text-center hidden">
-              <i
-                class="fas fa-trophy text-6xl text-yellow-500 mb-4 animate-bounce"
-              ></i>
-              <h2 class="text-2xl font-bold">Day Complete</h2>
-              <p class="text-muted-custom mt-2">Discipline is freedom.</p>
-            </div>
-
-            <!-- Active Task Card -->
+        <div id="run-view" class="absolute inset-0 flex flex-col">
+          <!-- Scrollable content area -->
+          <div class="flex-1 overflow-y-auto scroll-touch">
             <div
-              id="active-task-container"
-              class="w-full max-w-md flex flex-col gap-6 hidden"
+              class="min-h-full flex flex-col items-center justify-center p-6"
             >
-              <!-- Progress -->
-              <div
-                class="w-full bg-card-custom border border-custom h-1.5 rounded-full overflow-hidden shrink-0"
-              >
-                <div
-                  id="global-progress"
-                  class="bg-blue-500 h-full w-0 transition-all duration-500"
-                ></div>
+              <!-- Empty State -->
+              <div id="empty-state" class="text-center hidden">
+                <i class="fas fa-wind text-6xl text-slate-500 mb-4"></i>
+                <h2 class="text-xl font-bold">No Routine Set</h2>
+                <p class="text-muted-custom mt-2">
+                  Go to Settings > Edit Routine.
+                </p>
               </div>
 
-              <!-- Main Card -->
+              <!-- Done State -->
+              <div id="all-done-state" class="text-center hidden">
+                <i
+                  class="fas fa-trophy text-6xl text-yellow-500 mb-4 animate-bounce"
+                ></i>
+                <h2 class="text-2xl font-bold">Day Complete</h2>
+                <p class="text-muted-custom mt-2">Discipline is freedom.</p>
+              </div>
+
+              <!-- Active Task Card -->
               <div
-                id="task-card"
-                class="bg-card-custom border border-custom rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0"
+                id="active-task-container"
+                class="w-full max-w-md flex flex-col gap-6 hidden"
               >
-                <!-- Wait Overlay -->
+                <!-- Progress -->
                 <div
-                  id="wait-overlay"
-                  class="absolute inset-0 bg-black/90 z-10 flex flex-col items-center justify-center hidden"
+                  class="w-full bg-card-custom border border-custom h-1.5 rounded-full overflow-hidden shrink-0"
                 >
-                  <i
-                    class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"
-                  ></i>
-                  <h3 class="text-lg font-bold text-blue-200">
-                    Waiting for <span id="wait-target-time">05:00</span>
-                  </h3>
-                  <p class="text-slate-400 mono mt-2" id="wait-countdown">
-                    00:00:00
-                  </p>
-                  <button
-                    id="force-start-btn"
-                    class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white border border-slate-700"
+                  <div
+                    id="global-progress"
+                    class="bg-blue-500 h-full w-0 transition-all duration-500"
+                  ></div>
+                </div>
+
+                <!-- Main Card -->
+                <div
+                  id="task-card"
+                  class="bg-card-custom border border-custom rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl relative overflow-hidden task-card shrink-0"
+                >
+                  <!-- Wait Overlay -->
+                  <div
+                    id="wait-overlay"
+                    class="absolute inset-0 bg-black/90 z-10 flex flex-col items-center justify-center hidden"
                   >
-                    Force Start
+                    <i
+                      class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"
+                    ></i>
+                    <h3 class="text-lg font-bold text-blue-200">
+                      Waiting for <span id="wait-target-time">05:00</span>
+                    </h3>
+                    <p class="text-slate-400 mono mt-2" id="wait-countdown">
+                      00:00:00
+                    </p>
+                    <button
+                      id="force-start-btn"
+                      class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white border border-slate-700"
+                    >
+                      Force Start
+                    </button>
+                  </div>
+
+                  <!-- Content -->
+                  <div class="mb-6">
+                    <span
+                      id="task-icon"
+                      class="text-6xl mb-4 block transform hover:scale-110 transition cursor-default"
+                      >✅</span
+                    >
+                    <h2 id="task-text" class="text-3xl font-bold leading-tight">
+                      Task Name
+                    </h2>
+                    <a
+                      id="task-link-btn"
+                      target="_blank"
+                      href="#"
+                      class="hidden inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition text-sm font-medium mt-4 cursor-pointer"
+                    >
+                      <i class="fas fa-external-link-alt"></i>
+                      <span>Open Link</span>
+                    </a>
+                  </div>
+
+                  <!-- Timer -->
+                  <div id="timer-display" class="hidden mb-6">
+                    <div
+                      class="text-5xl font-mono font-bold text-emerald-500 tracking-wider"
+                      id="timer-val"
+                    >
+                      00:00
+                    </div>
+                    <div
+                      class="text-xs text-emerald-600/70 font-bold uppercase tracking-widest mt-1"
+                    >
+                      Remaining
+                    </div>
+                  </div>
+
+                  <!-- Sub-routine Indicator (at bottom) -->
+                  <p
+                    id="sub-routine-indicator"
+                    class="hidden text-xs text-muted-custom mt-4 uppercase tracking-wider font-medium"
+                  >
+                    <span id="sub-routine-parent-title"></span> [<span
+                      id="sub-routine-current"
+                      >1</span
+                    >/<span id="sub-routine-total">3</span>]
+                  </p>
+
+                  <!-- Quick Edit -->
+                  <button
+                    id="quick-edit-btn"
+                    class="absolute top-4 right-4 text-muted-custom hover:text-blue-500 transition p-2"
+                  >
+                    <i class="fas fa-pencil-alt text-sm"></i>
                   </button>
                 </div>
 
-                <!-- Content -->
-                <div class="mb-6">
-                  <span
-                    id="task-icon"
-                    class="text-6xl mb-4 block transform hover:scale-110 transition cursor-default"
-                    >✅</span
+                <!-- Up Next -->
+                <div class="text-center opacity-70 shrink-0 up-next-container">
+                  <p
+                    class="text-[10px] text-muted-custom uppercase tracking-widest mb-1"
                   >
-                  <h2 id="task-text" class="text-3xl font-bold leading-tight">
-                    Task Name
-                  </h2>
-                  <a
-                    id="task-link-btn"
-                    target="_blank"
-                    href="#"
-                    class="hidden inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition text-sm font-medium mt-4 cursor-pointer"
-                  >
-                    <i class="fas fa-external-link-alt"></i>
-                    <span>Open Link</span>
-                  </a>
+                    Up Next
+                  </p>
+                  <p id="next-task-text" class="font-medium truncate">...</p>
                 </div>
-
-                <!-- Timer -->
-                <div id="timer-display" class="hidden mb-6">
-                  <div
-                    class="text-5xl font-mono font-bold text-emerald-500 tracking-wider"
-                    id="timer-val"
-                  >
-                    00:00
-                  </div>
-                  <div
-                    class="text-xs text-emerald-600/70 font-bold uppercase tracking-widest mt-1"
-                  >
-                    Remaining
-                  </div>
-                </div>
-
-                <!-- Quick Edit -->
-                <button
-                  id="quick-edit-btn"
-                  class="absolute top-4 right-4 text-muted-custom hover:text-blue-500 transition p-2"
-                >
-                  <i class="fas fa-pencil-alt text-sm"></i>
-                </button>
               </div>
+            </div>
+          </div>
 
-              <!-- Next Preview -->
-              <div class="text-center opacity-70 shrink-0">
-                <p
-                  class="text-[10px] text-muted-custom uppercase tracking-widest mb-1"
-                >
-                  Up Next
-                </p>
-                <p id="next-task-text" class="font-medium truncate">...</p>
-              </div>
-
-              <!-- Controls -->
-              <div class="grid grid-cols-5 gap-3 mt-4 shrink-0">
-                <button
-                  id="undo-btn"
-                  class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition flex items-center justify-center"
-                >
-                  <i class="fas fa-undo"></i>
-                </button>
-                <button
-                  id="skip-btn"
-                  class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition"
-                >
-                  Skip
-                </button>
-                <button
-                  id="done-btn"
-                  class="col-span-3 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/30 active:scale-95 transition"
-                >
-                  DONE
-                </button>
-              </div>
-
-              <!-- Timer Controls -->
-              <div
-                id="timer-controls"
-                class="flex justify-center gap-3 hidden shrink-0"
+          <!-- Fixed Controls Bar -->
+          <div id="controls-bar" class="shrink-0">
+            <!-- Timer Controls (above main buttons) -->
+            <div
+              id="timer-controls"
+              class="flex justify-center gap-3 mb-3 hidden max-w-md mx-auto"
+            >
+              <button
+                onclick="adjustTimer(60)"
+                class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
               >
-                <button
-                  onclick="adjustTimer(60)"
-                  class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
-                >
-                  +1m
-                </button>
-                <button
-                  onclick="adjustTimer(300)"
-                  class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
-                >
-                  +5m
-                </button>
-                <button
-                  id="pause-btn"
-                  class="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/50 text-xs text-yellow-500 hover:bg-yellow-500/20"
-                >
-                  <i class="fas fa-pause"></i>
-                </button>
-              </div>
+                +1m
+              </button>
+              <button
+                onclick="adjustTimer(300)"
+                class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
+              >
+                +5m
+              </button>
+              <button
+                id="pause-btn"
+                class="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/50 text-xs text-yellow-500 hover:bg-yellow-500/20"
+              >
+                <i class="fas fa-pause"></i>
+              </button>
+            </div>
+
+            <!-- Main Controls -->
+            <div class="controls-grid grid grid-cols-5 gap-3 max-w-md mx-auto">
+              <button
+                id="undo-btn"
+                class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition flex items-center justify-center"
+              >
+                <i class="fas fa-undo"></i>
+              </button>
+              <button
+                id="skip-btn"
+                class="col-span-1 bg-card-custom border border-custom hover:bg-slate-700/10 text-muted-custom py-4 rounded-xl font-bold transition"
+              >
+                Skip
+              </button>
+              <button
+                id="done-btn"
+                class="col-span-3 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/30 active:scale-95 transition"
+              >
+                DONE
+              </button>
             </div>
           </div>
         </div>
@@ -692,6 +1085,8 @@
         run: document.getElementById("run-view"),
         settings: document.getElementById("settings-view"),
         logs: document.getElementById("log-manager-modal"),
+        manageRoutines: document.getElementById("manage-routines-view"),
+        routineEditor: document.getElementById("routine-editor-modal"),
       };
       const inputs = {
         routine: document.getElementById("routine-input"),
@@ -711,6 +1106,12 @@
         syncStatus: document.getElementById("sync-status"),
         syncIndicator: document.getElementById("sync-indicator"),
         userId: document.getElementById("user-id-display"),
+        subRoutineIndicator: document.getElementById("sub-routine-indicator"),
+        subRoutineParentTitle: document.getElementById(
+          "sub-routine-parent-title"
+        ),
+        subRoutineCurrent: document.getElementById("sub-routine-current"),
+        subRoutineTotal: document.getElementById("sub-routine-total"),
       };
       const toggles = {
         theme: document.getElementById("theme-toggle"),
@@ -719,8 +1120,15 @@
 
       // GLOBAL STATE
       let appState = {
+        // Multiple Routines support
+        routines: [], // Array of {id, name, content, isDefault, conditions}
+        activeRoutineId: null, // Currently active routine ID
+
+        // Legacy field for backward compatibility (will be migrated)
         rawRoutine: "",
+
         currentTaskIndex: 0,
+        currentSubRoutineIndex: 0,
         tasks: [],
         history: {}, // Keyed by YYYY-MM-DD
         settings: {
@@ -729,6 +1137,9 @@
         },
         isPaused: false,
       };
+
+      // Editing state (not persisted)
+      let editingRoutineId = null;
       let app, auth, db, user;
       let isSaving = false; // Flag to prevent sync overwrites during save
       let timerInterval, alarmLoopInterval, wakeLock;
@@ -818,16 +1229,34 @@
             if (isSaving) return; // Ignore sync while saving locally
             if (docSnap.exists()) {
               const data = docSnap.data();
-              // Merge remote data
-              appState.rawRoutine = data.rawRoutine || "";
+
+              // Support for multiple routines
+              if (data.routines && data.routines.length > 0) {
+                appState.routines = data.routines;
+                appState.activeRoutineId =
+                  data.activeRoutineId || selectRoutineForToday();
+              } else if (data.rawRoutine) {
+                // Migrate from old format
+                migrateToMultipleRoutines(data.rawRoutine);
+              }
+
+              // Set rawRoutine from active routine for backward compatibility
+              const activeRoutine = getActiveRoutine();
+              appState.rawRoutine = activeRoutine ? activeRoutine.content : "";
+
               appState.currentTaskIndex = data.currentTaskIndex || 0;
-              appState.history = data.history || {}; // Sync History
+              appState.currentSubRoutineIndex =
+                data.currentSubRoutineIndex || 0;
+              appState.history = data.history || {};
 
               if (document.activeElement !== inputs.routine)
                 inputs.routine.value = appState.rawRoutine;
+
+              updateActiveRoutineDisplay();
               parseAndRender();
-            } else if (!appState.rawRoutine) {
-              appState.rawRoutine = "";
+            } else if (appState.routines.length === 0) {
+              // No data, create default routine
+              migrateToMultipleRoutines("");
               views.edit.classList.remove("translate-x-full");
             }
           },
@@ -845,8 +1274,11 @@
           await setDoc(
             doc(db, "users", user.uid),
             {
-              rawRoutine: appState.rawRoutine,
+              routines: appState.routines,
+              activeRoutineId: appState.activeRoutineId,
+              rawRoutine: appState.rawRoutine, // Keep for backward compat
               currentTaskIndex: appState.currentTaskIndex,
+              currentSubRoutineIndex: appState.currentSubRoutineIndex,
               history: appState.history,
               lastUpdated: Date.now(),
             },
@@ -858,6 +1290,458 @@
         } finally {
           isSaving = false;
         }
+      }
+
+      // --- MULTIPLE ROUTINES MANAGEMENT ---
+      function generateUUID() {
+        return (
+          "routine-" +
+          Date.now() +
+          "-" +
+          Math.random().toString(36).substr(2, 9)
+        );
+      }
+
+      function getActiveRoutine() {
+        return (
+          appState.routines.find((r) => r.id === appState.activeRoutineId) ||
+          appState.routines[0]
+        );
+      }
+
+      function migrateToMultipleRoutines(rawRoutine) {
+        const defaultRoutine = {
+          id: generateUUID(),
+          name: "Daily Routine",
+          content: rawRoutine || "",
+          isDefault: true,
+          conditions: null,
+        };
+        appState.routines = [defaultRoutine];
+        appState.activeRoutineId = defaultRoutine.id;
+        saveStateToCloud();
+      }
+
+      function matchesCondition(conditions, date) {
+        if (!conditions) return false;
+
+        const dayOfWeek = date.getDay();
+        const dateOfMonth = date.getDate();
+
+        switch (conditions.type) {
+          case "weekday":
+            return (
+              conditions.weekdays && conditions.weekdays.includes(dayOfWeek)
+            );
+
+          case "date":
+            return conditions.dates && conditions.dates.includes(dateOfMonth);
+
+          case "pattern":
+            return matchesPattern(conditions.pattern, date);
+
+          case "manual":
+            return false; // Never auto-select manual routines
+
+          default:
+            return false;
+        }
+      }
+
+      function matchesPattern(pattern, date) {
+        if (!pattern) return false;
+
+        const [position, dayName] = pattern.split("-");
+        const dayMap = {
+          sunday: 0,
+          monday: 1,
+          tuesday: 2,
+          wednesday: 3,
+          thursday: 4,
+          friday: 5,
+          saturday: 6,
+        };
+        const targetDay = dayMap[dayName];
+
+        if (targetDay === undefined) return false;
+        if (date.getDay() !== targetDay) return false;
+
+        const dateOfMonth = date.getDate();
+
+        if (position === "first") {
+          return dateOfMonth <= 7;
+        } else if (position === "last") {
+          // Check if this is the last occurrence of this day in the month
+          const nextWeek = new Date(date);
+          nextWeek.setDate(dateOfMonth + 7);
+          return nextWeek.getMonth() !== date.getMonth();
+        }
+
+        return false;
+      }
+
+      function selectRoutineForToday() {
+        const today = new Date();
+
+        // First, check for routines with matching conditions
+        for (const routine of appState.routines) {
+          if (
+            routine.conditions &&
+            matchesCondition(routine.conditions, today)
+          ) {
+            return routine.id;
+          }
+        }
+
+        // Fall back to default routine
+        const defaultRoutine = appState.routines.find((r) => r.isDefault);
+        return defaultRoutine
+          ? defaultRoutine.id
+          : appState.routines[0]?.id || null;
+      }
+
+      function updateActiveRoutineDisplay() {
+        const activeRoutine = getActiveRoutine();
+        const nameEl = document.getElementById("active-routine-name");
+        if (nameEl && activeRoutine) {
+          nameEl.innerText = activeRoutine.name;
+        }
+      }
+
+      function renderRoutineList() {
+        const listEl = document.getElementById("routine-list");
+        if (!listEl) return;
+
+        listEl.innerHTML = "";
+
+        appState.routines.forEach((routine) => {
+          const isActive = routine.id === appState.activeRoutineId;
+          const conditionText = getConditionDisplayText(routine);
+
+          const item = document.createElement("div");
+          item.className = `p-4 rounded-xl border ${
+            isActive
+              ? "border-emerald-500 bg-emerald-500/10"
+              : "border-custom bg-card-custom"
+          } cursor-pointer hover:border-blue-500 transition`;
+          item.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  ${
+                    routine.isDefault
+                      ? '<i class="fas fa-star text-yellow-500 text-xs"></i>'
+                      : ""
+                  }
+                  <span class="font-bold">${routine.name}</span>
+                  ${
+                    isActive
+                      ? '<span class="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded">Active</span>'
+                      : ""
+                  }
+                </div>
+                <p class="text-xs text-muted-custom mt-1">${conditionText}</p>
+              </div>
+              <div class="flex gap-2">
+                <button class="edit-routine-item text-blue-400 hover:text-blue-300 p-2" data-id="${
+                  routine.id
+                }">
+                  <i class="fas fa-pen text-sm"></i>
+                </button>
+                <button class="activate-routine-item text-emerald-400 hover:text-emerald-300 p-2 ${
+                  isActive ? "hidden" : ""
+                }" data-id="${routine.id}">
+                  <i class="fas fa-play text-sm"></i>
+                </button>
+              </div>
+            </div>
+          `;
+
+          listEl.appendChild(item);
+        });
+
+        // Add click handlers
+        listEl.querySelectorAll(".edit-routine-item").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openRoutineEditor(btn.dataset.id);
+          });
+        });
+
+        listEl.querySelectorAll(".activate-routine-item").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            switchToRoutine(btn.dataset.id);
+          });
+        });
+      }
+
+      function getConditionDisplayText(routine) {
+        if (routine.isDefault && !routine.conditions) return "Default";
+        if (!routine.conditions) return "No schedule";
+
+        const c = routine.conditions;
+        switch (c.type) {
+          case "weekday":
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            return c.weekdays.map((d) => days[d]).join(", ");
+          case "date":
+            return "Days: " + c.dates.join(", ");
+          case "pattern":
+            return c.pattern
+              .replace("-", " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+          case "manual":
+            return "Manual only";
+          default:
+            return "Default";
+        }
+      }
+
+      function openRoutineEditor(routineId = null) {
+        editingRoutineId = routineId;
+        const modal = document.getElementById("routine-editor-modal");
+        const titleEl = document.getElementById("routine-editor-title");
+        const nameInput = document.getElementById("routine-name-input");
+        const contentInput = document.getElementById("routine-content-input");
+        const conditionType = document.getElementById("routine-condition-type");
+        const isDefaultCheck = document.getElementById("routine-is-default");
+        const deleteBtn = document.getElementById("delete-routine-btn");
+
+        // Reset form
+        resetConditionSelectors();
+
+        if (routineId) {
+          // Editing existing routine
+          const routine = appState.routines.find((r) => r.id === routineId);
+          if (!routine) return;
+
+          titleEl.innerText = "Edit Routine";
+          nameInput.value = routine.name;
+          contentInput.value = routine.content;
+          isDefaultCheck.checked = routine.isDefault;
+
+          if (routine.conditions) {
+            conditionType.value = routine.conditions.type;
+            showConditionSelector(routine.conditions.type);
+            populateConditionValues(routine.conditions);
+          } else {
+            conditionType.value = "default";
+          }
+
+          deleteBtn.classList.remove("hidden");
+        } else {
+          // New routine
+          titleEl.innerText = "New Routine";
+          nameInput.value = "";
+          contentInput.value = "";
+          conditionType.value = "default";
+          isDefaultCheck.checked = false;
+          deleteBtn.classList.add("hidden");
+        }
+
+        modal.classList.remove("hidden");
+      }
+
+      function closeRoutineEditor() {
+        document.getElementById("routine-editor-modal").classList.add("hidden");
+        editingRoutineId = null;
+      }
+
+      function resetConditionSelectors() {
+        document.getElementById("weekday-selector").classList.add("hidden");
+        document.getElementById("date-selector").classList.add("hidden");
+        document.getElementById("pattern-selector").classList.add("hidden");
+
+        // Reset weekday buttons
+        document.querySelectorAll(".weekday-btn").forEach((btn) => {
+          btn.classList.remove("bg-blue-600");
+          btn.classList.add("bg-slate-700");
+        });
+
+        document.getElementById("routine-dates-input").value = "";
+        document.getElementById("routine-pattern-input").value = "first-friday";
+      }
+
+      function showConditionSelector(type) {
+        resetConditionSelectors();
+        if (type === "weekday") {
+          document
+            .getElementById("weekday-selector")
+            .classList.remove("hidden");
+        } else if (type === "date") {
+          document.getElementById("date-selector").classList.remove("hidden");
+        } else if (type === "pattern") {
+          document
+            .getElementById("pattern-selector")
+            .classList.remove("hidden");
+        }
+      }
+
+      function populateConditionValues(conditions) {
+        if (conditions.type === "weekday" && conditions.weekdays) {
+          conditions.weekdays.forEach((day) => {
+            const btn = document.querySelector(
+              `.weekday-btn[data-day="${day}"]`
+            );
+            if (btn) {
+              btn.classList.remove("bg-slate-700");
+              btn.classList.add("bg-blue-600");
+            }
+          });
+        } else if (conditions.type === "date" && conditions.dates) {
+          document.getElementById("routine-dates-input").value =
+            conditions.dates.join(", ");
+        } else if (conditions.type === "pattern" && conditions.pattern) {
+          document.getElementById("routine-pattern-input").value =
+            conditions.pattern;
+        }
+      }
+
+      function saveRoutineFromEditor() {
+        const nameInput = document.getElementById("routine-name-input");
+        const contentInput = document.getElementById("routine-content-input");
+        const conditionType = document.getElementById("routine-condition-type");
+        const isDefaultCheck = document.getElementById("routine-is-default");
+
+        const name = nameInput.value.trim() || "Untitled Routine";
+        const content = contentInput.value;
+        const isDefault = isDefaultCheck.checked;
+
+        // Build conditions object
+        let conditions = null;
+        const type = conditionType.value;
+
+        if (type === "weekday") {
+          const selectedDays = [];
+          document
+            .querySelectorAll(".weekday-btn.bg-blue-600")
+            .forEach((btn) => {
+              selectedDays.push(parseInt(btn.dataset.day));
+            });
+          if (selectedDays.length > 0) {
+            conditions = { type: "weekday", weekdays: selectedDays };
+          }
+        } else if (type === "date") {
+          const datesStr = document.getElementById("routine-dates-input").value;
+          const dates = datesStr
+            .split(",")
+            .map((d) => parseInt(d.trim()))
+            .filter((d) => !isNaN(d) && d >= 1 && d <= 31);
+          if (dates.length > 0) {
+            conditions = { type: "date", dates };
+          }
+        } else if (type === "pattern") {
+          const pattern = document.getElementById(
+            "routine-pattern-input"
+          ).value;
+          conditions = { type: "pattern", pattern };
+        } else if (type === "manual") {
+          conditions = { type: "manual" };
+        }
+
+        if (editingRoutineId) {
+          // Update existing routine
+          const idx = appState.routines.findIndex(
+            (r) => r.id === editingRoutineId
+          );
+          if (idx >= 0) {
+            appState.routines[idx].name = name;
+            appState.routines[idx].content = content;
+            appState.routines[idx].conditions = conditions;
+
+            if (isDefault) {
+              // Unset other defaults
+              appState.routines.forEach((r) => (r.isDefault = false));
+              appState.routines[idx].isDefault = true;
+            }
+
+            // Update rawRoutine if this is active
+            if (editingRoutineId === appState.activeRoutineId) {
+              appState.rawRoutine = content;
+              inputs.routine.value = content;
+            }
+          }
+        } else {
+          // Create new routine
+          const newRoutine = {
+            id: generateUUID(),
+            name,
+            content,
+            isDefault: isDefault || appState.routines.length === 0,
+            conditions,
+          };
+
+          if (newRoutine.isDefault) {
+            appState.routines.forEach((r) => (r.isDefault = false));
+          }
+
+          appState.routines.push(newRoutine);
+        }
+
+        closeRoutineEditor();
+        renderRoutineList();
+        updateActiveRoutineDisplay();
+        saveStateToCloud();
+      }
+
+      function deleteRoutine(routineId) {
+        if (appState.routines.length <= 1) {
+          alert("Cannot delete the last routine.");
+          return;
+        }
+
+        const idx = appState.routines.findIndex((r) => r.id === routineId);
+        if (idx >= 0) {
+          const wasActive = routineId === appState.activeRoutineId;
+          const wasDefault = appState.routines[idx].isDefault;
+
+          appState.routines.splice(idx, 1);
+
+          // If deleted was default, make first one default
+          if (wasDefault && appState.routines.length > 0) {
+            appState.routines[0].isDefault = true;
+          }
+
+          // If deleted was active, switch to another
+          if (wasActive) {
+            appState.activeRoutineId = selectRoutineForToday();
+            const active = getActiveRoutine();
+            appState.rawRoutine = active ? active.content : "";
+            inputs.routine.value = appState.rawRoutine;
+            appState.currentTaskIndex = 0;
+            appState.currentSubRoutineIndex = 0;
+            parseAndRender();
+          }
+
+          closeRoutineEditor();
+          renderRoutineList();
+          updateActiveRoutineDisplay();
+          saveStateToCloud();
+        }
+      }
+
+      function switchToRoutine(routineId) {
+        const routine = appState.routines.find((r) => r.id === routineId);
+        if (!routine) return;
+
+        appState.activeRoutineId = routineId;
+        appState.rawRoutine = routine.content;
+        appState.currentTaskIndex = 0;
+        appState.currentSubRoutineIndex = 0;
+
+        inputs.routine.value = appState.rawRoutine;
+
+        renderRoutineList();
+        updateActiveRoutineDisplay();
+        parseAndRender();
+        saveStateToCloud();
+
+        // Close manage routines view
+        document
+          .getElementById("manage-routines-view")
+          .classList.add("translate-x-full");
+        views.settings.classList.add("translate-x-full");
       }
 
       function showSyncStatus(msg, color) {
@@ -884,12 +1768,21 @@
         const task = appState.tasks[appState.currentTaskIndex];
         if (!task) return;
 
+        // Determine which task text to log (sub-routine item or main task)
+        let logText = task.text;
+        if (task.isSubRoutineParent && task.subRoutines.length > 0) {
+          const subTask = task.subRoutines[appState.currentSubRoutineIndex];
+          if (subTask) {
+            logText = `${task.text} > ${subTask.text}`;
+          }
+        }
+
         const today = new Date().toISOString().split("T")[0];
         if (!appState.history[today]) appState.history[today] = [];
 
         appState.history[today].push({
           time: new Date().toLocaleTimeString(),
-          task: task.text,
+          task: logText,
           status: status,
         });
         // State is saved after this call in actions
@@ -908,103 +1801,148 @@
 
       function parseRoutine(text) {
         const lines = text.split("\n");
-        return lines
-          .map((line, index) => {
-            if (line.trim() === "") return null;
-            let rawLine = line.trim();
 
-            // 1. Logic Pre-processor (IF/ELSE)
-            if (rawLine.startsWith("IF:")) {
-              const firstSeparator = rawLine.indexOf("::");
-              if (firstSeparator !== -1) {
-                const condition = rawLine.substring(3, firstSeparator); // Remove "IF:"
-                const remainder = rawLine.substring(firstSeparator + 2);
+        // Helper function to parse a single line into a task object
+        function parseLine(line, index) {
+          if (line.trim() === "") return null;
+          let rawLine = line.trim();
 
-                let mainTask = remainder;
-                let elsePart = null;
+          // Check if this is a sub-routine item (starts with "- ")
+          const isSubRoutineItem = rawLine.startsWith("- ");
+          if (isSubRoutineItem) {
+            rawLine = rawLine.substring(2).trim(); // Remove "- " prefix
+          }
 
-                if (remainder.includes("| ELSE::")) {
-                  const elseSplit = remainder.split("| ELSE::");
-                  mainTask = elseSplit[0];
-                  elsePart = elseSplit[1];
-                }
+          // 1. Logic Pre-processor (IF/ELSE)
+          if (rawLine.startsWith("IF:")) {
+            const firstSeparator = rawLine.indexOf("::");
+            if (firstSeparator !== -1) {
+              const condition = rawLine.substring(3, firstSeparator); // Remove "IF:"
+              const remainder = rawLine.substring(firstSeparator + 2);
 
-                if (checkCondition(condition)) {
-                  rawLine = mainTask;
-                } else if (elsePart) {
-                  rawLine = elsePart;
-                } else {
-                  return null; // Skip this task
-                }
+              let mainTask = remainder;
+              let elsePart = null;
+
+              if (remainder.includes("| ELSE::")) {
+                const elseSplit = remainder.split("| ELSE::");
+                mainTask = elseSplit[0];
+                elsePart = elseSplit[1];
+              }
+
+              if (checkCondition(condition)) {
+                rawLine = mainTask;
+              } else if (elsePart) {
+                rawLine = elsePart;
+              } else {
+                return null; // Skip this task
               }
             }
+          }
 
-            let type = "standard",
-              meta = null,
-              cleanText = rawLine;
+          let type = "standard",
+            meta = null,
+            cleanText = rawLine;
 
-            // 2. Bracket Syntax Parser
-            // [@HH:MM] - Gate
-            const gateMatch = rawLine.match(/\[@(\d{1,2}:\d{2})\]/);
-            if (gateMatch) {
-              type = "gate";
-              meta = gateMatch[1];
-              cleanText = cleanText.replace(gateMatch[0], "").trim();
-            }
+          // Check if this is a sub-routine parent (ends with ":")
+          const isSubRoutineParent =
+            cleanText.endsWith(":") && !isSubRoutineItem;
+          if (isSubRoutineParent) {
+            cleanText = cleanText.slice(0, -1).trim(); // Remove trailing ":"
+          }
 
-            // [=>HH:MM] - Till
-            const tillMatch = rawLine.match(/\[=>(\d{1,2}:\d{2})\]/);
-            if (tillMatch) {
-              type = "till";
-              meta = tillMatch[1];
-              cleanText = cleanText.replace(tillMatch[0], "").trim();
-            }
+          // 2. Bracket Syntax Parser
+          // [@HH:MM] - Gate
+          const gateMatch = rawLine.match(/\[@(\d{1,2}:\d{2})\]/);
+          if (gateMatch) {
+            type = "gate";
+            meta = gateMatch[1];
+            cleanText = cleanText.replace(gateMatch[0], "").trim();
+          }
 
-            // [Xm] - Timer
-            const durationMatch = rawLine.match(/\[(\d+)m\]/i);
-            if (durationMatch) {
-              type = "timer";
-              meta = parseInt(durationMatch[1]) * 60;
-              cleanText = cleanText.replace(durationMatch[0], "").trim();
-            }
+          // [=>HH:MM] - Till
+          const tillMatch = rawLine.match(/\[=>(\d{1,2}:\d{2})\]/);
+          if (tillMatch) {
+            type = "till";
+            meta = tillMatch[1];
+            cleanText = cleanText.replace(tillMatch[0], "").trim();
+          }
 
-            // [http...] - Link
-            const linkMatch = rawLine.match(/\[(https?:\/\/[^\]]+)\]/);
-            let link = null;
-            if (linkMatch) {
-              link = linkMatch[1];
-              cleanText = cleanText.replace(linkMatch[0], "").trim();
-            }
+          // [Xm] - Timer
+          const durationMatch = rawLine.match(/\[(\d+)m\]/i);
+          if (durationMatch) {
+            type = "timer";
+            meta = parseInt(durationMatch[1]) * 60;
+            cleanText = cleanText.replace(durationMatch[0], "").trim();
+          }
 
-            const highMatch = rawLine.match(/==(.*?)==/);
-            let isHigh = false;
-            if (highMatch) {
-              isHigh = true;
-              cleanText = cleanText.replace(/==/g, "").trim();
-              cleanText = cleanText.replace(highMatch[1], highMatch[1]); // Keep text, remove brackets logic handled by replace above technically
-              cleanText = cleanText.replace(/==/g, ""); // Clean up
-            }
+          // [http...] - Link
+          const linkMatch = rawLine.match(/\[(https?:\/\/[^\]]+)\]/);
+          let link = null;
+          if (linkMatch) {
+            link = linkMatch[1];
+            cleanText = cleanText.replace(linkMatch[0], "").trim();
+          }
 
-            const emojiMatch = cleanText.match(
-              /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
-            );
-            const icon = emojiMatch ? emojiMatch[0] : "✅";
-            // Final cleanup of cleanText to remove any # comments if user adds them
-            cleanText = cleanText.split("#")[0].trim();
-            const displayText = cleanText.replace(icon, "").trim();
+          const highMatch = rawLine.match(/==(.*?)==/);
+          let isHigh = false;
+          if (highMatch) {
+            isHigh = true;
+            cleanText = cleanText.replace(/==/g, "").trim();
+            cleanText = cleanText.replace(highMatch[1], highMatch[1]); // Keep text, remove brackets logic handled by replace above technically
+            cleanText = cleanText.replace(/==/g, ""); // Clean up
+          }
 
-            return {
-              id: index,
-              raw: line,
-              text: displayText,
-              icon,
-              type,
-              meta,
-              link,
-              isHigh,
-            };
-          })
+          const emojiMatch = cleanText.match(
+            /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
+          );
+          const icon = emojiMatch ? emojiMatch[0] : "✅";
+          // Final cleanup of cleanText to remove any # comments if user adds them
+          cleanText = cleanText.split("#")[0].trim();
+          const displayText = cleanText.replace(icon, "").trim();
+
+          return {
+            id: index,
+            raw: line,
+            text: displayText,
+            icon,
+            type,
+            meta,
+            link,
+            isHigh,
+            isSubRoutineParent,
+            isSubRoutineItem,
+            subRoutines: [], // Will be populated for parents
+          };
+        }
+
+        // First pass: parse all lines
+        const parsedLines = lines
+          .map((line, index) => parseLine(line, index))
           .filter((t) => t !== null);
+
+        // Second pass: group sub-routines under their parent
+        const result = [];
+        for (let i = 0; i < parsedLines.length; i++) {
+          const task = parsedLines[i];
+
+          if (task.isSubRoutineItem) {
+            // This is a sub-routine item, attach to the last parent in result
+            if (
+              result.length > 0 &&
+              result[result.length - 1].isSubRoutineParent
+            ) {
+              result[result.length - 1].subRoutines.push(task);
+            } else {
+              // No parent found, treat as regular task
+              task.isSubRoutineItem = false;
+              result.push(task);
+            }
+          } else {
+            result.push(task);
+          }
+        }
+
+        return result;
       }
 
       function parseAndRender() {
@@ -1018,6 +1956,7 @@
             .classList.add("hidden");
           document.getElementById("all-done-state").classList.remove("hidden");
           document.getElementById("empty-state").classList.add("hidden");
+          display.subRoutineIndicator.classList.add("hidden");
           return;
         }
         if (appState.tasks.length === 0) {
@@ -1025,6 +1964,7 @@
           document
             .getElementById("active-task-container")
             .classList.add("hidden");
+          display.subRoutineIndicator.classList.add("hidden");
           return;
         }
 
@@ -1037,23 +1977,62 @@
         const task = appState.tasks[appState.currentTaskIndex];
         const nextTask = appState.tasks[appState.currentTaskIndex + 1];
 
-        display.taskText.innerText = task.text || "Untitled";
-        display.taskIcon.innerText = task.icon;
+        // Determine what to display based on sub-routine state
+        let displayTask = task;
+        let isInSubRoutine = false;
+
+        if (task.isSubRoutineParent && task.subRoutines.length > 0) {
+          // We're in a sub-routine parent, show the current sub-routine item
+          isInSubRoutine = true;
+
+          // Validate sub-routine index
+          if (appState.currentSubRoutineIndex >= task.subRoutines.length) {
+            appState.currentSubRoutineIndex = 0;
+          }
+
+          displayTask = task.subRoutines[appState.currentSubRoutineIndex];
+
+          // Show consolidated sub-routine indicator at bottom: JOURNAL [1/3]
+          display.subRoutineParentTitle.innerText = task.text;
+          display.subRoutineIndicator.classList.remove("hidden");
+          display.subRoutineCurrent.innerText =
+            appState.currentSubRoutineIndex + 1;
+          display.subRoutineTotal.innerText = task.subRoutines.length;
+        } else {
+          // Regular task, hide sub-routine indicator
+          display.subRoutineIndicator.classList.add("hidden");
+        }
+
+        display.taskText.innerText = displayTask.text || "Untitled";
+        display.taskIcon.innerText = displayTask.icon;
 
         // Link Button
         const linkBtn = document.getElementById("task-link-btn");
-        if (task.link) {
-          linkBtn.href = task.link;
+        if (displayTask.link) {
+          linkBtn.href = displayTask.link;
           linkBtn.classList.remove("hidden");
         } else {
           linkBtn.classList.add("hidden");
           linkBtn.href = "#";
         }
 
-        // Up Next Text Fix
-        display.nextTask.innerText = nextTask ? nextTask.text : "Finish Line";
+        // Up Next Text - compute based on sub-routine state
+        let nextTaskText = "Finish Line";
+        if (isInSubRoutine) {
+          // Check if there are more sub-routines
+          if (appState.currentSubRoutineIndex < task.subRoutines.length - 1) {
+            nextTaskText =
+              task.subRoutines[appState.currentSubRoutineIndex + 1].text;
+          } else {
+            // Sub-routines done, next is the main task after parent
+            nextTaskText = nextTask ? nextTask.text : "Finish Line";
+          }
+        } else {
+          nextTaskText = nextTask ? nextTask.text : "Finish Line";
+        }
+        display.nextTask.innerText = nextTaskText;
 
-        if (task.isHigh) display.taskCard.classList.add("priority-glow");
+        if (displayTask.isHigh) display.taskCard.classList.add("priority-glow");
         else display.taskCard.classList.remove("priority-glow");
 
         display.globalProgress.style.width = `${
@@ -1064,7 +2043,7 @@
         display.timerBox.classList.add("hidden");
         document.getElementById("timer-controls").classList.add("hidden");
 
-        handleTaskLogic(task);
+        handleTaskLogic(displayTask);
       }
 
       function handleTaskLogic(task) {
@@ -1301,6 +2280,53 @@
           views.edit.classList.add("translate-x-full")
         );
 
+        // MANAGE ROUTINES
+        onClick("manage-routines-btn", () => {
+          views.settings.classList.add("translate-x-full");
+          renderRoutineList();
+          document
+            .getElementById("manage-routines-view")
+            .classList.remove("translate-x-full");
+        });
+        onClick("close-manage-routines-btn", () => {
+          document
+            .getElementById("manage-routines-view")
+            .classList.add("translate-x-full");
+        });
+        onClick("add-routine-btn", () => {
+          openRoutineEditor(null);
+        });
+
+        // ROUTINE EDITOR
+        onClick("close-routine-editor-btn", closeRoutineEditor);
+        onClick("cancel-routine-editor-btn", closeRoutineEditor);
+        onClick("save-routine-editor-btn", saveRoutineFromEditor);
+        onClick("delete-routine-btn", () => {
+          if (
+            editingRoutineId &&
+            confirm("Are you sure you want to delete this routine?")
+          ) {
+            deleteRoutine(editingRoutineId);
+          }
+        });
+
+        // Condition type change
+        const conditionTypeSelect = document.getElementById(
+          "routine-condition-type"
+        );
+        if (conditionTypeSelect) {
+          conditionTypeSelect.onchange = (e) =>
+            showConditionSelector(e.target.value);
+        }
+
+        // Weekday buttons toggle
+        document.querySelectorAll(".weekday-btn").forEach((btn) => {
+          btn.onclick = () => {
+            btn.classList.toggle("bg-blue-600");
+            btn.classList.toggle("bg-slate-700");
+          };
+        });
+
         // LOGS
         onClick("manage-logs-btn", () => {
           inputs.logs.value = JSON.stringify(appState.history, null, 2);
@@ -1334,39 +2360,107 @@
         // ACTIONS
         onClick("save-routine-btn", () => {
           appState.rawRoutine = inputs.routine.value;
+
+          // Update active routine content in routines array
+          const activeRoutine = getActiveRoutine();
+          if (activeRoutine) {
+            activeRoutine.content = appState.rawRoutine;
+          }
+
           // Parse new routine to check task count
           const newTasks = parseRoutine(appState.rawRoutine);
           // Only reset to 0 if current index exceeds new task count
           if (appState.currentTaskIndex >= newTasks.length) {
             appState.currentTaskIndex = 0;
+            appState.currentSubRoutineIndex = 0;
           }
           saveStateToCloud();
           views.edit.classList.add("translate-x-full");
           parseAndRender();
         });
         onClick("done-btn", () => {
-          logTask("done");
-          appState.currentTaskIndex++;
+          const task = appState.tasks[appState.currentTaskIndex];
+
+          // Check if we're in a sub-routine
+          if (task && task.isSubRoutineParent && task.subRoutines.length > 0) {
+            if (appState.currentSubRoutineIndex < task.subRoutines.length - 1) {
+              // Move to next sub-routine
+              logTask("done");
+              appState.currentSubRoutineIndex++;
+            } else {
+              // All sub-routines done, move to next main task
+              logTask("done");
+              appState.currentSubRoutineIndex = 0;
+              appState.currentTaskIndex++;
+            }
+          } else {
+            // Regular task
+            logTask("done");
+            appState.currentTaskIndex++;
+          }
+
           saveStateToCloud();
           parseAndRender();
         });
         onClick("skip-btn", () => {
-          logTask("skipped");
-          appState.currentTaskIndex++;
+          const task = appState.tasks[appState.currentTaskIndex];
+
+          // Check if we're in a sub-routine
+          if (task && task.isSubRoutineParent && task.subRoutines.length > 0) {
+            if (appState.currentSubRoutineIndex < task.subRoutines.length - 1) {
+              // Skip to next sub-routine
+              logTask("skipped");
+              appState.currentSubRoutineIndex++;
+            } else {
+              // All sub-routines done/skipped, move to next main task
+              logTask("skipped");
+              appState.currentSubRoutineIndex = 0;
+              appState.currentTaskIndex++;
+            }
+          } else {
+            // Regular task
+            logTask("skipped");
+            appState.currentTaskIndex++;
+          }
+
           saveStateToCloud();
           parseAndRender();
         });
         onClick("undo-btn", () => {
-          if (appState.currentTaskIndex > 0) {
+          const task = appState.tasks[appState.currentTaskIndex];
+
+          // Check if we're in a sub-routine (not at first sub-routine)
+          if (
+            task &&
+            task.isSubRoutineParent &&
+            task.subRoutines.length > 0 &&
+            appState.currentSubRoutineIndex > 0
+          ) {
+            // Go back to previous sub-routine
+            appState.currentSubRoutineIndex--;
+          } else if (appState.currentTaskIndex > 0) {
+            // Go back to previous main task
             appState.currentTaskIndex--;
-            saveStateToCloud();
-            parseAndRender();
+
+            // If the previous task was a sub-routine parent, go to its last sub-routine
+            const prevTask = appState.tasks[appState.currentTaskIndex];
+            if (
+              prevTask &&
+              prevTask.isSubRoutineParent &&
+              prevTask.subRoutines.length > 0
+            ) {
+              appState.currentSubRoutineIndex = prevTask.subRoutines.length - 1;
+            }
           }
+
+          saveStateToCloud();
+          parseAndRender();
         });
         onClick("refresh-btn", () => location.reload());
         onClick("reset-day-btn", () => {
           if (confirm("Restart day?")) {
             appState.currentTaskIndex = 0;
+            appState.currentSubRoutineIndex = 0;
             saveStateToCloud();
             parseAndRender();
             views.settings.classList.add("translate-x-full");
