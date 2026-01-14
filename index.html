@@ -1050,9 +1050,8 @@
           linkBtn.href = "#";
         }
 
-        display.nextTask.innerText = nextTask
-          ? `Next: ${nextTask.text}`
-          : "Next: Finish Line";
+        // Up Next Text Fix
+        display.nextTask.innerText = nextTask ? nextTask.text : "Finish Line";
 
         if (task.isHigh) display.taskCard.classList.add("priority-glow");
         else display.taskCard.classList.remove("priority-glow");
@@ -1163,6 +1162,21 @@
         alarmAudio.pause();
         alarmAudio.currentTime = 0;
       }
+
+      // Unlock Audio on First Interaction
+      function unlockAudio() {
+        alarmAudio
+          .play()
+          .then(() => {
+            alarmAudio.pause();
+            alarmAudio.currentTime = 0;
+            document.removeEventListener("click", unlockAudio);
+            document.removeEventListener("touchstart", unlockAudio);
+          })
+          .catch((e) => {});
+      }
+      document.addEventListener("click", unlockAudio);
+      document.addEventListener("touchstart", unlockAudio);
 
       function updateTimerDisplay(s) {
         const h = Math.floor(s / 3600),
