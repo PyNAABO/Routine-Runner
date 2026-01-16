@@ -32,6 +32,7 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 ### 🧠 **Smart Routine Parsing**
 
 - **Bracket Syntax**: Clean, consistent syntax for times and durations (e.g., `[@06:00]`, `[20m]`).
+- **Prayer Times**: Integrate Islamic prayer times into your routine with `[@Prayer:Fajr]` syntax.
 - **Conditional Logic**: Show tasks only on specific days (e.g., `IF:MON::Task`).
 - **Link Support**: Embed clickable links directly in tasks (e.g., `[https://...]`).
 - **Priority Highlighting**: Mark important tasks with `==Text==` for a golden glow.
@@ -101,25 +102,28 @@ The app uses a powerful bracket-based syntax. Write your routine as a plain text
 
 ### 🎯 **Core Syntax Patterns**
 
-| Syntax      | Type                 | Behavior           | Example                                 |
-| :---------- | :------------------- | :----------------- | :-------------------------------------- |
-| `[@HH:MM]`  | **Start At** (Gate)  | Blocks until time  | `Wake up [@06:00]`                      |
-| `[=>HH:MM]` | **End By** (Till)    | Count down to time | `Work [=>17:00]`                        |
-| `[Xm]`      | **Duration** (Timer) | Timer for X mins   | `Read [30m]`                            |
-| `==Text==`  | **Priority**         | Golden border      | `==Workout== [30m]`                     |
-| `IF:DAY::`  | **Condition**        | Only show on Day   | `IF:SUN::Relax`                         |
-| `\| ELSE::` | **Else**             | Fallback task      | `... \| ELSE::Work`                     |
-| `[http...]` | **Link**             | "Open Link" button | `Meeting [https://meet.google.com/abc]` |
+| Syntax            | Type                 | Behavior             | Example                                 |
+| :---------------- | :------------------- | :------------------- | :-------------------------------------- |
+| `[@HH:MM]`        | **Start At** (Gate)  | Blocks until time    | `Wake up [@06:00]`                      |
+| `[=>HH:MM]`       | **End By** (Till)    | Count down to time   | `Work [=>17:00]`                        |
+| `[Xm]`            | **Duration** (Timer) | Timer for X mins     | `Read [30m]`                            |
+| `[@Prayer:Name]`  | **Prayer Gate**      | Blocks until prayer  | `Breakfast [@Prayer:Fajr]`              |
+| `[=>Prayer:Name]` | **Prayer Till**      | Count down to prayer | `Morning Work [=>Prayer:Dhuhr]`         |
+| `==Text==`        | **Priority**         | Golden border        | `==Workout== [30m]`                     |
+| `IF:DAY::`        | **Condition**        | Only show on Day     | `IF:SUN::Relax`                         |
+| `\| ELSE::`       | **Else**             | Fallback task        | `... \| ELSE::Work`                     |
+| `[http...]`       | **Link**             | "Open Link" button   | `Meeting [https://meet.google.com/abc]` |
 
 ### 📋 **Complete Routine Example**
 
 ```text
-🌅 Morning Routine [@06:00]
+🌅 Morning Routine [@Prayer:Fajr]
 IF:MON::Start Week Review [15m]
 IF:!SUN::==🏋️ Quick Workout== [20m]
 🚿 Shower [15m]
-🍳 Breakfast [=>08:00] [https://tasty.co/recipe]
-💼 Deep Work Session 1 [90m]
+🍳 Breakfast [30m]
+🕌 Dhuhr Prayer [@Prayer:Dhuhr]
+💼 Deep Work Session [=>Prayer:Asr]
 🍽️ Lunch [=>13:00]
 IF:FRI::🎉 Team Social [=>17:00] | ELSE::💼 Deep Work Session 2 [90m]
 ```
@@ -144,6 +148,51 @@ JOURNAL:
 ```
 
 The parent title appears at the bottom of the card as `JOURNAL [1/3]` while each sub-task is shown individually.
+
+---
+
+## 🕌 Prayer Times
+
+Routine Runner integrates with the [Al Adhan API](https://aladhan.com) to fetch accurate prayer times for your location.
+
+### Setup
+
+1. Go to **Settings** → **Prayer Times**
+2. Enter your **Latitude** and **Longitude** manually, OR
+3. Click the **📍 GPS button** to auto-detect your location
+4. Click **Save Location**
+
+### Prayer Syntax
+
+Use prayer times as gates (wait until) or tills (countdown to):
+
+| Syntax             | Behavior             | Example                         |
+| :----------------- | :------------------- | :------------------------------ |
+| `[@Prayer:Fajr]`   | Wait until Fajr time | `Wake up [@Prayer:Fajr]`        |
+| `[=>Prayer:Dhuhr]` | Count down to Dhuhr  | `Morning Work [=>Prayer:Dhuhr]` |
+
+### Valid Prayer Names
+
+> **Note**: Use these exact names (case-insensitive): `Fajr`, `Dhuhr`, `Asr`, `Maghrib`, `Isha`
+
+The app will warn you if you use an invalid prayer name when saving your routine.
+
+### Example Prayer-Based Routine
+
+```text
+🌅 Wake Up [@Prayer:Fajr]
+🧎 Fajr Prayer [15m]
+📚 Morning Study [=>Prayer:Dhuhr]
+🕌 Dhuhr Prayer [15m]
+💼 Afternoon Work [=>Prayer:Asr]
+🧎 Asr Prayer [15m]
+🏃 Exercise [45m]
+🕌 Maghrib Prayer [@Prayer:Maghrib]
+🍽️ Dinner [30m]
+📖 Evening Reading [=>Prayer:Isha]
+🧎 Isha Prayer [15m]
+🌙 Wind Down [30m]
+```
 
 ---
 

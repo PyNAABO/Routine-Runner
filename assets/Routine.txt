@@ -1,0 +1,42 @@
+🔕 Alarm Off [@05:00]
+💧 Drink Water
+🪥 Brush [2m]
+💧 Ablution
+🛏️ Make Bed
+🤲 ==Tahajjud Prayer==
+🤲 ==Sunnah Fajr Prayer== [@Prayer:Fajr]
+🤲 ==Fajr Prayer==
+📚 Study [=>08:00]
+🥞 Breakfast
+📚 Study [=>09:45]
+🤲 ==Duha Prayer==
+📚 Study [=>11:30]
+👕 Iron Dress
+🩴 Clean sandals
+🛵 Clean Vehicle
+🚿 Shower
+🎒 Pack-UP
+🧘‍♂️ Meditation [3m]
+🤲 ==Duhr Prayer== [@Prayer:Dhuhr]
+✍️ EXAM
+🤲 ==Asr Prayer== [@Prayer:Asr]
+IF:FRI::🤲 PRAY PRAY PRAY
+🤲 ==Maghrib Prayer== [@Prayer:Maghrib]
+IF:THU::👃 Shower+Deo | ELSE::♨️ Hot Shower
+🍽️ Dinner
+🎪 Entertainment [=>Prayer:Isha]
+🤲 ==Isha Prayer== [@Prayer:Isha]
+📚 Study [=>21:15]
+📓 Journal:
+- ⚖️ Check Weight
+- 📈 SheetSync [https://pynaabo.github.io/SheetSync]
+- 👁️ Read all pinned keeps
+- ➕ Read & Add from `All TODOs`
+- ⏭️ Plan for Tomorrow
+- 👕 Plan: Dress
+- 📅 Time Block in G-Calendar
+- 📅 Organize G-Calendar
+- 3️⃣ Top 3 Tasks with Time
+📐 Setup table 4️⃣ Study
+🪫 Iron Dress
+🛏️ Get in Bed [@21:45]

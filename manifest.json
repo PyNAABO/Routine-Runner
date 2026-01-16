@@ -1,6 +1,7 @@
 {
   "name": "Routine Runner",
   "short_name": "Runner",
+  "description": "A premium, distraction-free Progressive Web App designed to execute daily routines with precision. Features smart text-based schedules, real-time sync across devices, and prayer time integration.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",

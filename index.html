@@ -219,9 +219,9 @@
           grid-column: span 1;
         }
 
-        #controls-bar #timer-controls {
-          flex-direction: column;
-          gap: 0.25rem;
+        /* Hide timer controls in landscape to save space */
+        #timer-controls {
+          display: none !important;
         }
 
         /* Hide progress bar in landscape to save space */
@@ -427,6 +427,68 @@
               >
               <i class="fas fa-chevron-right text-xs"></i>
             </button>
+          </div>
+
+          <!-- Prayer Time Settings -->
+          <div class="mb-6">
+            <h3
+              class="text-xs font-bold text-muted-custom uppercase mb-3 tracking-wider"
+            >
+              Prayer Times
+            </h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs text-muted-custom mb-1"
+                  >Latitude</label
+                >
+                <div class="flex gap-2">
+                  <input
+                    type="number"
+                    id="prayer-latitude"
+                    step="any"
+                    class="flex-1 bg-body text-main p-2 rounded-lg border border-custom focus:border-blue-500 outline-none text-sm"
+                    placeholder="e.g., 11.2098095"
+                  />
+                  <button
+                    id="get-location-btn"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium"
+                    title="Get from GPS"
+                  >
+                    <i class="fas fa-map-marker-alt"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-muted-custom mb-1"
+                  >Longitude</label
+                >
+                <input
+                  type="number"
+                  id="prayer-longitude"
+                  step="any"
+                  class="w-full bg-body text-main p-2 rounded-lg border border-custom focus:border-blue-500 outline-none text-sm"
+                  placeholder="e.g., 75.815483"
+                />
+              </div>
+              <button
+                id="save-prayer-location-btn"
+                class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm"
+              >
+                Save Location
+              </button>
+              <div
+                class="text-xs text-muted-custom p-2 bg-card-custom rounded border border-custom"
+              >
+                <p class="mb-1">
+                  <strong>Prayer Names:</strong> Fajr, Dhuhr, Asr, Maghrib, Isha
+                </p>
+                <p class="text-[10px]">
+                  Use in routines:
+                  <code class="bg-body px-1 rounded">[@Prayer:Fajr]</code> or
+                  <code class="bg-body px-1 rounded">[=>Prayer:Dhuhr]</code>
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Toggles -->
@@ -973,33 +1035,33 @@
             </div>
           </div>
 
+          <!-- Timer Controls (floating above controls bar) -->
+          <div
+            id="timer-controls"
+            class="flex justify-center gap-3 pb-3 hidden max-w-md mx-auto px-4"
+          >
+            <button
+              onclick="adjustTimer(60)"
+              class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
+            >
+              +1m
+            </button>
+            <button
+              onclick="adjustTimer(300)"
+              class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
+            >
+              +5m
+            </button>
+            <button
+              id="pause-btn"
+              class="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/50 text-xs text-yellow-500 hover:bg-yellow-500/20"
+            >
+              <i class="fas fa-pause"></i>
+            </button>
+          </div>
+
           <!-- Fixed Controls Bar -->
           <div id="controls-bar" class="shrink-0">
-            <!-- Timer Controls (above main buttons) -->
-            <div
-              id="timer-controls"
-              class="flex justify-center gap-3 mb-3 hidden max-w-md mx-auto"
-            >
-              <button
-                onclick="adjustTimer(60)"
-                class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
-              >
-                +1m
-              </button>
-              <button
-                onclick="adjustTimer(300)"
-                class="px-3 py-1 rounded bg-card-custom border border-custom text-xs text-muted-custom"
-              >
-                +5m
-              </button>
-              <button
-                id="pause-btn"
-                class="px-3 py-1 rounded bg-yellow-500/10 border border-yellow-500/50 text-xs text-yellow-500 hover:bg-yellow-500/20"
-              >
-                <i class="fas fa-pause"></i>
-              </button>
-            </div>
-
             <!-- Main Controls -->
             <div class="controls-grid grid grid-cols-5 gap-3 max-w-md mx-auto">
               <button
@@ -1134,7 +1196,13 @@
         settings: {
           darkMode: true,
           autoAdvance: false,
+          prayerLocation: {
+            latitude: null,
+            longitude: null,
+          },
         },
+        prayerTimes: null, // Cached prayer times for today
+        prayerTimesDate: null, // Date for which prayer times are cached
         isPaused: false,
       };
 
@@ -1167,6 +1235,14 @@
             ...JSON.parse(savedSettings),
           };
         applySettings();
+        loadPrayerLocation();
+        // Fetch prayer times if location is set
+        if (
+          appState.settings.prayerLocation.latitude &&
+          appState.settings.prayerLocation.longitude
+        ) {
+          fetchPrayerTimes();
+        }
 
         const storedConfig = localStorage.getItem(CONFIG_KEY);
         if (storedConfig) {
@@ -1191,6 +1267,148 @@
         }
         toggles.theme.checked = appState.settings.darkMode;
         toggles.autoAdvance.checked = appState.settings.autoAdvance;
+      }
+
+      // --- PRAYER TIME FUNCTIONALITY ---
+      const VALID_PRAYER_NAMES = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+
+      function loadPrayerLocation() {
+        const saved = localStorage.getItem("rr_prayer_location");
+        if (saved) {
+          try {
+            const location = JSON.parse(saved);
+            appState.settings.prayerLocation = {
+              latitude: location.latitude || null,
+              longitude: location.longitude || null,
+            };
+            // Update UI if elements exist
+            const latInput = document.getElementById("prayer-latitude");
+            const lonInput = document.getElementById("prayer-longitude");
+            if (latInput)
+              latInput.value = appState.settings.prayerLocation.latitude || "";
+            if (lonInput)
+              lonInput.value = appState.settings.prayerLocation.longitude || "";
+          } catch (e) {
+            console.error("Failed to load prayer location:", e);
+          }
+        }
+      }
+
+      function savePrayerLocation() {
+        localStorage.setItem(
+          "rr_prayer_location",
+          JSON.stringify(appState.settings.prayerLocation)
+        );
+        localStorage.setItem("rr_settings", JSON.stringify(appState.settings));
+      }
+
+      async function getDailyPrayerTimes() {
+        const lat = appState.settings.prayerLocation.latitude;
+        const lon = appState.settings.prayerLocation.longitude;
+
+        if (!lat || !lon) {
+          console.warn("Prayer location not set");
+          return null;
+        }
+
+        const today = new Date();
+        const dateString = `${String(today.getDate()).padStart(
+          2,
+          "0"
+        )}-${String(today.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${today.getFullYear()}`;
+
+        const url = new URL(`https://api.aladhan.com/v1/timings/${dateString}`);
+        const params = {
+          latitude: String(lat),
+          longitude: String(lon),
+          method: "1",
+          shafaq: "general",
+          tune: "0,0,0,0,0,0,0,-4,0",
+          calendarMethod: "UAQ",
+        };
+        url.search = new URLSearchParams(params).toString();
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+          const response = await fetch(url, {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) throw new Error(`Error: ${response.status}`);
+          const json = await response.json();
+          return json.data;
+        } catch (error) {
+          if (error.name === "AbortError") {
+            console.error(
+              "Prayer time request timed out (took longer than 20s)"
+            );
+          } else {
+            console.error("Fetch failed:", error.message);
+          }
+          return null;
+        }
+      }
+
+      async function fetchPrayerTimes() {
+        const today = new Date().toDateString();
+        // Use cached times if available for today
+        if (appState.prayerTimes && appState.prayerTimesDate === today) {
+          return appState.prayerTimes;
+        }
+
+        const data = await getDailyPrayerTimes();
+        if (data && data.timings) {
+          appState.prayerTimes = data.timings;
+          appState.prayerTimesDate = today;
+          return appState.prayerTimes;
+        }
+        return null;
+      }
+
+      function getPrayerTime(prayerName) {
+        if (!appState.prayerTimes) return null;
+
+        // Normalize prayer name (handle case variations)
+        const normalized =
+          prayerName.charAt(0).toUpperCase() + prayerName.slice(1);
+        const validName = VALID_PRAYER_NAMES.find(
+          (name) => name.toLowerCase() === normalized.toLowerCase()
+        );
+
+        if (!validName) {
+          console.warn(
+            `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
+              ", "
+            )}`
+          );
+          return null;
+        }
+
+        // API returns times like "05:30 (PKT)" - extract just the time
+        const timeStr = appState.prayerTimes[validName];
+        if (!timeStr) return null;
+
+        const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+          return `${match[1]}:${match[2]}`;
+        }
+        return null;
+      }
+
+      function validatePrayerName(prayerName) {
+        const normalized =
+          prayerName.charAt(0).toUpperCase() + prayerName.slice(1);
+        return VALID_PRAYER_NAMES.some(
+          (name) => name.toLowerCase() === normalized.toLowerCase()
+        );
       }
 
       function initFirebase(config) {
@@ -1608,6 +1826,28 @@
         const content = contentInput.value;
         const isDefault = isDefaultCheck.checked;
 
+        // Validate prayer names in routine
+        const prayerMatches = content.matchAll(/\[(@|=>)Prayer:(\w+)\]/gi);
+        const invalidPrayers = [];
+        for (const match of prayerMatches) {
+          const prayerName = match[2];
+          if (!validatePrayerName(prayerName)) {
+            invalidPrayers.push(prayerName);
+          }
+        }
+
+        if (invalidPrayers.length > 0) {
+          const uniqueInvalid = [...new Set(invalidPrayers)];
+          const warning = `Invalid prayer name(s): ${uniqueInvalid.join(
+            ", "
+          )}\n\nValid prayer names: ${VALID_PRAYER_NAMES.join(
+            ", "
+          )}\n\nDo you want to save anyway?`;
+          if (!confirm(warning)) {
+            return; // User cancelled, don't save
+          }
+        }
+
         // Build conditions object
         let conditions = null;
         const type = conditionType.value;
@@ -1851,9 +2091,41 @@
           }
 
           // 2. Bracket Syntax Parser
+          // [@Prayer:Name] - Prayer Gate (check before regular gate)
+          const prayerGateMatch = rawLine.match(/\[@Prayer:(\w+)\]/i);
+          if (prayerGateMatch) {
+            const prayerName = prayerGateMatch[1];
+            if (!validatePrayerName(prayerName)) {
+              console.warn(
+                `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
+                  ", "
+                )}`
+              );
+            }
+            type = "prayerGate";
+            meta = prayerName;
+            cleanText = cleanText.replace(prayerGateMatch[0], "").trim();
+          }
+
+          // [=>Prayer:Name] - Prayer Till (check before regular till)
+          const prayerTillMatch = rawLine.match(/\[=>Prayer:(\w+)\]/i);
+          if (prayerTillMatch) {
+            const prayerName = prayerTillMatch[1];
+            if (!validatePrayerName(prayerName)) {
+              console.warn(
+                `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
+                  ", "
+                )}`
+              );
+            }
+            type = "prayerTill";
+            meta = prayerName;
+            cleanText = cleanText.replace(prayerTillMatch[0], "").trim();
+          }
+
           // [@HH:MM] - Gate
           const gateMatch = rawLine.match(/\[@(\d{1,2}:\d{2})\]/);
-          if (gateMatch) {
+          if (gateMatch && type === "standard") {
             type = "gate";
             meta = gateMatch[1];
             cleanText = cleanText.replace(gateMatch[0], "").trim();
@@ -1861,7 +2133,7 @@
 
           // [=>HH:MM] - Till
           const tillMatch = rawLine.match(/\[=>(\d{1,2}:\d{2})\]/);
-          if (tillMatch) {
+          if (tillMatch && type === "standard") {
             type = "till";
             meta = tillMatch[1];
             cleanText = cleanText.replace(tillMatch[0], "").trim();
@@ -1947,6 +2219,7 @@
 
       function parseAndRender() {
         appState.tasks = parseRoutine(appState.rawRoutine);
+        setControlsState(true);
         stopAlarm();
         clearInterval(timerInterval);
 
@@ -2043,20 +2316,75 @@
         display.timerBox.classList.add("hidden");
         document.getElementById("timer-controls").classList.add("hidden");
 
-        handleTaskLogic(displayTask);
+        handleTaskLogic(displayTask).catch((err) => {
+          console.error("Error handling task logic:", err);
+        });
       }
 
-      function handleTaskLogic(task) {
-        if (task.type === "gate") {
+      async function handleTaskLogic(task) {
+        if (task.type === "prayerGate") {
+          // Fetch prayer times if not cached
+          await fetchPrayerTimes();
+          const prayerTime = getPrayerTime(task.meta);
+          if (prayerTime) {
+            const target = getNextOccurrence(prayerTime);
+            if (new Date() < target) {
+              display.waitOverlay.classList.remove("hidden");
+              setControlsState(false);
+              display.waitTarget.innerText = `${task.meta}: ${prayerTime}`;
+              startTimerCheck(() => {
+                const diff = target - new Date();
+                if (diff <= 0) {
+                  clearInterval(timerInterval);
+                  display.waitOverlay.classList.add("hidden");
+                  setControlsState(true);
+                  sendNotification(
+                    "Prayer Time",
+                    `It's time for ${task.meta}: ${task.text}`
+                  );
+                  triggerCompletion();
+                } else {
+                  display.waitCount.innerText = formatTime(
+                    Math.floor(diff / 1000)
+                  );
+                }
+              });
+            }
+          } else {
+            console.warn(
+              `Prayer time not available for ${task.meta}. Please set location in settings.`
+            );
+          }
+        } else if (task.type === "prayerTill") {
+          // Fetch prayer times if not cached
+          await fetchPrayerTimes();
+          const prayerTime = getPrayerTime(task.meta);
+          if (prayerTime) {
+            document.getElementById("pause-btn").classList.add("hidden");
+            const target = getNextOccurrence(prayerTime);
+            const diffSeconds = Math.floor((target - new Date()) / 1000);
+            if (diffSeconds > 0) startCountDown(diffSeconds);
+            else {
+              display.timerVal.innerText = "00:00";
+              display.timerBox.classList.remove("hidden");
+            }
+          } else {
+            console.warn(
+              `Prayer time not available for ${task.meta}. Please set location in settings.`
+            );
+          }
+        } else if (task.type === "gate") {
           const target = getNextOccurrence(task.meta);
           if (new Date() < target) {
             display.waitOverlay.classList.remove("hidden");
+            setControlsState(false);
             display.waitTarget.innerText = task.meta;
             startTimerCheck(() => {
               const diff = target - new Date();
               if (diff <= 0) {
                 clearInterval(timerInterval);
                 display.waitOverlay.classList.add("hidden");
+                setControlsState(true);
                 sendNotification("Task Ready", `It's time for: ${task.text}`);
                 triggerCompletion();
               } else {
@@ -2131,6 +2459,40 @@
         } else {
           btn.innerHTML = '<i class="fas fa-pause"></i>';
           display.timerVal.classList.remove("opacity-50");
+        }
+      }
+
+      function setControlsState(enabled) {
+        const doneBtn = document.getElementById("done-btn");
+        const skipBtn = document.getElementById("skip-btn");
+        // Undo remains enabled as per request
+
+        if (enabled) {
+          doneBtn.disabled = false;
+          skipBtn.disabled = false;
+          doneBtn.classList.remove(
+            "opacity-50",
+            "cursor-not-allowed",
+            "pointer-events-none"
+          );
+          skipBtn.classList.remove(
+            "opacity-50",
+            "cursor-not-allowed",
+            "pointer-events-none"
+          );
+        } else {
+          doneBtn.disabled = true;
+          skipBtn.disabled = true;
+          doneBtn.classList.add(
+            "opacity-50",
+            "cursor-not-allowed",
+            "pointer-events-none"
+          );
+          skipBtn.classList.add(
+            "opacity-50",
+            "cursor-not-allowed",
+            "pointer-events-none"
+          );
         }
       }
 
@@ -2361,6 +2723,30 @@
         onClick("save-routine-btn", () => {
           appState.rawRoutine = inputs.routine.value;
 
+          // Validate prayer names in routine
+          const prayerMatches = appState.rawRoutine.matchAll(
+            /\[(@|=>)Prayer:(\w+)\]/gi
+          );
+          const invalidPrayers = [];
+          for (const match of prayerMatches) {
+            const prayerName = match[2];
+            if (!validatePrayerName(prayerName)) {
+              invalidPrayers.push(prayerName);
+            }
+          }
+
+          if (invalidPrayers.length > 0) {
+            const uniqueInvalid = [...new Set(invalidPrayers)];
+            const warning = `Invalid prayer name(s): ${uniqueInvalid.join(
+              ", "
+            )}\n\nValid prayer names: ${VALID_PRAYER_NAMES.join(
+              ", "
+            )}\n\nDo you want to save anyway?`;
+            if (!confirm(warning)) {
+              return; // User cancelled, don't save
+            }
+          }
+
           // Update active routine content in routines array
           const activeRoutine = getActiveRoutine();
           if (activeRoutine) {
@@ -2468,6 +2854,7 @@
         });
         onClick("force-start-btn", () => {
           display.waitOverlay.classList.add("hidden");
+          setControlsState(true);
           stopAlarm();
           clearInterval(timerInterval);
         });
@@ -2488,6 +2875,96 @@
             "rr_settings",
             JSON.stringify(appState.settings)
           );
+        });
+
+        // PRAYER SETTINGS
+        onClick("save-prayer-location-btn", () => {
+          const latInput = document.getElementById("prayer-latitude");
+          const lonInput = document.getElementById("prayer-longitude");
+          const lat = parseFloat(latInput.value);
+          const lon = parseFloat(lonInput.value);
+
+          if (isNaN(lat) || isNaN(lon)) {
+            alert("Please enter valid latitude and longitude values.");
+            return;
+          }
+
+          if (lat < -90 || lat > 90) {
+            alert("Latitude must be between -90 and 90.");
+            return;
+          }
+
+          if (lon < -180 || lon > 180) {
+            alert("Longitude must be between -180 and 180.");
+            return;
+          }
+
+          appState.settings.prayerLocation = { latitude: lat, longitude: lon };
+          savePrayerLocation();
+
+          // Clear cached prayer times to force refresh
+          appState.prayerTimes = null;
+          appState.prayerTimesDate = null;
+
+          // Fetch new prayer times
+          fetchPrayerTimes()
+            .then(() => {
+              alert("Prayer location saved! Prayer times updated.");
+            })
+            .catch(() => {
+              alert(
+                "Location saved, but failed to fetch prayer times. Please check your internet connection."
+              );
+            });
+        });
+
+        onClick("get-location-btn", async () => {
+          if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+          }
+
+          const btn = document.getElementById("get-location-btn");
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          btn.disabled = true;
+
+          try {
+            const position = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 10000,
+                enableHighAccuracy: true,
+              });
+            });
+
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            document.getElementById("prayer-latitude").value = lat.toFixed(7);
+            document.getElementById("prayer-longitude").value = lon.toFixed(7);
+
+            appState.settings.prayerLocation = {
+              latitude: lat,
+              longitude: lon,
+            };
+            savePrayerLocation();
+
+            // Clear cached prayer times
+            appState.prayerTimes = null;
+            appState.prayerTimesDate = null;
+
+            // Fetch new prayer times
+            await fetchPrayerTimes();
+            alert("Location obtained from GPS! Prayer times updated.");
+          } catch (error) {
+            alert(
+              "Failed to get location: " +
+                (error.message || "Permission denied or timeout")
+            );
+          } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
         });
 
         // AUTH & CONFIG
@@ -2544,8 +3021,14 @@
           if (lines[taskID] !== undefined) {
             lines[taskID] = newVal;
             appState.rawRoutine = lines.join("\n");
+            // Update active routine in routines array
+            const activeRoutine = getActiveRoutine();
+            if (activeRoutine) {
+              activeRoutine.content = appState.rawRoutine;
+            }
             saveStateToCloud();
             document.getElementById("quick-edit-modal").classList.add("hidden");
+            parseAndRender();
           }
         });
       }
