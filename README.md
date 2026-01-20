@@ -60,11 +60,11 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 
 ## ⚙️ Quick Start
 
-### 🚀 **Option A — Try the Live Demo**
+### 🚀 **Option A — Use the Hosted Version**
 
-> **Note**: The demo uses a shared Firebase instance. For personal use, follow the self-hosting guide.
+> The app comes with a pre-configured Firebase instance. Simply open the app and sign in with Google to get started!
 
-### 🔧 **Option B — Self-Host in 5 Minutes**
+### 🔧 **Option B — Self-Host with Your Own Firebase**
 
 #### **Step 1: Clone & Prepare**
 
@@ -78,7 +78,8 @@ cd Routine-Runner
 1. **Create Firebase Project**: Go to [Firebase Console](https://console.firebase.google.com/).
 2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
 3. **Setup Firestore**: Create a database in **Production mode**.
-4. **Security Rules**: Allow read/write for authenticated users.
+4. **Get Your Config**: Copy your Firebase config from Project Settings.
+5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1115) with your config.
 
 #### **Step 3: Deploy**
 
@@ -88,11 +89,7 @@ python -m http.server 8000
 # Then open http://localhost:8000
 ```
 
-#### **Step 4: Connect App**
-
-1. Open the app.
-2. Go to **"Connect Database"**.
-3. Paste your Firebase Config JSON.
+That's it! Open the app and sign in with Google. Your routines sync automatically across all devices.
 
 ---
 
