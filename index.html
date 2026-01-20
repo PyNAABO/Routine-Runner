@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,6 +7,10 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Routine Runner</title>
+    <meta
+      name="description"
+      content="A premium, distraction-free Progressive Web App designed to execute daily routines with precision. Features smart text-based schedules, real-time sync across devices, and prayer time integration."
+    />
 
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json" />
@@ -52,7 +56,9 @@
         background-color: var(--bg-body);
         color: var(--text-main);
         overscroll-behavior-y: none;
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
         background-attachment: fixed;
       }
 
@@ -64,7 +70,7 @@
           #0f172a 80%
         );
       }
-      .light-mode body {
+      body.light-mode {
         background-image: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
       }
 
@@ -258,32 +264,7 @@
   </head>
   <body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom">
     <!-- SETUP SCREEN -->
-    <div
-      id="setup-screen"
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 p-6 hidden"
-    >
-      <div class="w-full max-w-md">
-        <h1 class="text-2xl font-bold text-white mb-2">⚙️ Connect Database</h1>
-        <p class="text-slate-400 mb-4 text-sm">
-          Paste your <strong>Firebase Config JSON</strong> OR a
-          <strong>Raw Gist URL</strong>.
-        </p>
-        <textarea
-          id="config-input"
-          class="w-full bg-slate-800 text-emerald-400 font-mono text-xs p-4 rounded-xl h-32 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-700 placeholder-slate-600"
-        ></textarea>
-        <button
-          id="save-config-btn"
-          class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold shadow-lg transition flex justify-center items-center gap-2"
-        >
-          <span>Save & Connect</span>
-        </button>
-        <p
-          id="setup-error"
-          class="text-red-400 text-xs mt-3 text-center hidden"
-        ></p>
-      </div>
-    </div>
+    <!-- SETUP SCREEN REMOVED -->
 
     <!-- LOGIN SCREEN -->
     <div
@@ -313,12 +294,12 @@
         id="login-error-msg"
         class="text-red-400 text-xs mt-4 hidden text-center max-w-xs"
       ></p>
-      <!-- Renamed ID to avoid duplicate -->
+      <!-- Sign out option on login screen -->
       <button
         id="login-reset-btn"
         class="mt-8 text-slate-600 text-xs hover:text-slate-400 underline"
       >
-        Reset Database Config
+        Sign Out
       </button>
     </div>
 
@@ -1130,15 +1111,25 @@
         doc,
         onSnapshot,
         setDoc,
+        enableIndexedDbPersistence,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       // CONFIG
-      const CONFIG_KEY = "rr_firebase_config";
+      // TODO: Replace with your actual Firebase Configuration
+      const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyCCHeGuHqy2aQzwmmy7G7tGEs0v_t6hmkE",
+        authDomain: "routine-runner-3b538.firebaseapp.com",
+        projectId: "routine-runner-3b538",
+        storageBucket: "routine-runner-3b538.firebasestorage.app",
+        messagingSenderId: "1089575788718",
+        appId: "1:1089575788718:web:73973fb3f8c3f909fd4d3f",
+        measurementId: "G-VZM3EHHZEX",
+      };
+
       const ALARM_FILE = "assets/iphone_alarm.mp3";
 
       // DOM
       const screens = {
-        setup: document.getElementById("setup-screen"),
         login: document.getElementById("login-screen"),
         app: document.getElementById("app-screen"),
       };
@@ -1170,7 +1161,7 @@
         userId: document.getElementById("user-id-display"),
         subRoutineIndicator: document.getElementById("sub-routine-indicator"),
         subRoutineParentTitle: document.getElementById(
-          "sub-routine-parent-title"
+          "sub-routine-parent-title",
         ),
         subRoutineCurrent: document.getElementById("sub-routine-current"),
         subRoutineTotal: document.getElementById("sub-routine-total"),
@@ -1210,6 +1201,7 @@
       let editingRoutineId = null;
       let app, auth, db, user;
       let isSaving = false; // Flag to prevent sync overwrites during save
+      let isOnline = navigator.onLine; // Track network status
       let timerInterval, alarmLoopInterval, wakeLock;
       const alarmAudio = new Audio(ALARM_FILE);
       alarmAudio.loop = true;
@@ -1222,6 +1214,16 @@
         ) {
           navigator.serviceWorker.register("sw.js").catch(console.error);
         }
+
+        // Network status monitoring
+        window.addEventListener("online", () => {
+          isOnline = true;
+          showSyncStatus("Online", "emerald");
+        });
+        window.addEventListener("offline", () => {
+          isOnline = false;
+          showSyncStatus("Offline", "yellow");
+        });
 
         // Check/Request Notification permission on load if already granted, otherwise wait for interaction
         if ("Notification" in window && Notification.permission === "granted") {
@@ -1244,16 +1246,8 @@
           fetchPrayerTimes();
         }
 
-        const storedConfig = localStorage.getItem(CONFIG_KEY);
-        if (storedConfig) {
-          try {
-            initFirebase(JSON.parse(storedConfig));
-          } catch (e) {
-            showScreen("setup");
-          }
-        } else {
-          showScreen("setup");
-        }
+        // Initialize Firebase with hardcoded config
+        initFirebase(FIREBASE_CONFIG);
         setupEventListeners();
       }
 
@@ -1297,7 +1291,7 @@
       function savePrayerLocation() {
         localStorage.setItem(
           "rr_prayer_location",
-          JSON.stringify(appState.settings.prayerLocation)
+          JSON.stringify(appState.settings.prayerLocation),
         );
         localStorage.setItem("rr_settings", JSON.stringify(appState.settings));
       }
@@ -1314,10 +1308,10 @@
         const today = new Date();
         const dateString = `${String(today.getDate()).padStart(
           2,
-          "0"
+          "0",
         )}-${String(today.getMonth() + 1).padStart(
           2,
-          "0"
+          "0",
         )}-${today.getFullYear()}`;
 
         const url = new URL(`https://api.aladhan.com/v1/timings/${dateString}`);
@@ -1348,7 +1342,7 @@
         } catch (error) {
           if (error.name === "AbortError") {
             console.error(
-              "Prayer time request timed out (took longer than 20s)"
+              "Prayer time request timed out (took longer than 20s)",
             );
           } else {
             console.error("Fetch failed:", error.message);
@@ -1359,17 +1353,40 @@
 
       async function fetchPrayerTimes() {
         const today = new Date().toDateString();
-        // Use cached times if available for today
+        // Use in-memory cached times if available for today
         if (appState.prayerTimes && appState.prayerTimesDate === today) {
           return appState.prayerTimes;
         }
 
+        // Try to fetch new data
         const data = await getDailyPrayerTimes();
         if (data && data.timings) {
           appState.prayerTimes = data.timings;
           appState.prayerTimesDate = today;
+          // Cache to localStorage for offline use
+          localStorage.setItem(
+            "rr_prayer_times_cache",
+            JSON.stringify({ date: today, timings: data.timings }),
+          );
           return appState.prayerTimes;
         }
+
+        // If fetch failed, try localStorage cache
+        const cached = localStorage.getItem("rr_prayer_times_cache");
+        if (cached) {
+          try {
+            const cachedData = JSON.parse(cached);
+            if (cachedData.date === today && cachedData.timings) {
+              console.log("Using cached prayer times from localStorage");
+              appState.prayerTimes = cachedData.timings;
+              appState.prayerTimesDate = today;
+              return appState.prayerTimes;
+            }
+          } catch (e) {
+            console.error("Failed to parse cached prayer times:", e);
+          }
+        }
+
         return null;
       }
 
@@ -1380,14 +1397,14 @@
         const normalized =
           prayerName.charAt(0).toUpperCase() + prayerName.slice(1);
         const validName = VALID_PRAYER_NAMES.find(
-          (name) => name.toLowerCase() === normalized.toLowerCase()
+          (name) => name.toLowerCase() === normalized.toLowerCase(),
         );
 
         if (!validName) {
           console.warn(
             `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
-              ", "
-            )}`
+              ", ",
+            )}`,
           );
           return null;
         }
@@ -1407,7 +1424,7 @@
         const normalized =
           prayerName.charAt(0).toUpperCase() + prayerName.slice(1);
         return VALID_PRAYER_NAMES.some(
-          (name) => name.toLowerCase() === normalized.toLowerCase()
+          (name) => name.toLowerCase() === normalized.toLowerCase(),
         );
       }
 
@@ -1416,6 +1433,17 @@
           app = initializeApp(config);
           auth = getAuth(app);
           db = getFirestore(app);
+
+          // Enable offline persistence for Firestore
+          enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code === "failed-precondition") {
+              console.warn(
+                "Multiple tabs open, persistence enabled in first tab only",
+              );
+            } else if (err.code === "unimplemented") {
+              console.warn("Browser doesn't support offline persistence");
+            }
+          });
 
           onAuthStateChanged(auth, (u) => {
             if (u) {
@@ -1430,8 +1458,10 @@
             }
           });
         } catch (e) {
-          localStorage.removeItem(CONFIG_KEY);
-          location.reload();
+          console.error("Firebase init error", e);
+          alert(
+            "Error initializing Firebase. Please check your configuration in index.html",
+          );
         }
       }
 
@@ -1480,7 +1510,7 @@
           },
           (error) => {
             showSyncStatus("Error!", "red");
-          }
+          },
         );
       }
 
@@ -1500,7 +1530,7 @@
               history: appState.history,
               lastUpdated: Date.now(),
             },
-            { merge: true }
+            { merge: true },
           );
           showSyncStatus("Synced", "emerald");
         } catch (e) {
@@ -1516,7 +1546,7 @@
           "routine-" +
           Date.now() +
           "-" +
-          Math.random().toString(36).substr(2, 9)
+          Math.random().toString(36).substring(2, 11)
         );
       }
 
@@ -1800,7 +1830,7 @@
         if (conditions.type === "weekday" && conditions.weekdays) {
           conditions.weekdays.forEach((day) => {
             const btn = document.querySelector(
-              `.weekday-btn[data-day="${day}"]`
+              `.weekday-btn[data-day="${day}"]`,
             );
             if (btn) {
               btn.classList.remove("bg-slate-700");
@@ -1839,9 +1869,9 @@
         if (invalidPrayers.length > 0) {
           const uniqueInvalid = [...new Set(invalidPrayers)];
           const warning = `Invalid prayer name(s): ${uniqueInvalid.join(
-            ", "
+            ", ",
           )}\n\nValid prayer names: ${VALID_PRAYER_NAMES.join(
-            ", "
+            ", ",
           )}\n\nDo you want to save anyway?`;
           if (!confirm(warning)) {
             return; // User cancelled, don't save
@@ -1873,7 +1903,7 @@
           }
         } else if (type === "pattern") {
           const pattern = document.getElementById(
-            "routine-pattern-input"
+            "routine-pattern-input",
           ).value;
           conditions = { type: "pattern", pattern };
         } else if (type === "manual") {
@@ -1883,7 +1913,7 @@
         if (editingRoutineId) {
           // Update existing routine
           const idx = appState.routines.findIndex(
-            (r) => r.id === editingRoutineId
+            (r) => r.id === editingRoutineId,
           );
           if (idx >= 0) {
             appState.routines[idx].name = name;
@@ -1996,10 +2026,10 @@
           color === "emerald"
             ? "bg-emerald-500"
             : color === "yellow"
-            ? "bg-yellow-500"
-            : color === "red"
-            ? "bg-red-500"
-            : "bg-blue-500"
+              ? "bg-yellow-500"
+              : color === "red"
+                ? "bg-red-500"
+                : "bg-blue-500"
         }`;
       }
 
@@ -2098,8 +2128,8 @@
             if (!validatePrayerName(prayerName)) {
               console.warn(
                 `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
-                  ", "
-                )}`
+                  ", ",
+                )}`,
               );
             }
             type = "prayerGate";
@@ -2114,8 +2144,8 @@
             if (!validatePrayerName(prayerName)) {
               console.warn(
                 `Invalid prayer name: ${prayerName}. Valid names: ${VALID_PRAYER_NAMES.join(
-                  ", "
-                )}`
+                  ", ",
+                )}`,
               );
             }
             type = "prayerTill";
@@ -2160,12 +2190,10 @@
           if (highMatch) {
             isHigh = true;
             cleanText = cleanText.replace(/==/g, "").trim();
-            cleanText = cleanText.replace(highMatch[1], highMatch[1]); // Keep text, remove brackets logic handled by replace above technically
-            cleanText = cleanText.replace(/==/g, ""); // Clean up
           }
 
           const emojiMatch = cleanText.match(
-            /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u
+            /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u,
           );
           const icon = emojiMatch ? emojiMatch[0] : "✅";
           // Final cleanup of cleanText to remove any # comments if user adds them
@@ -2340,19 +2368,19 @@
                   setControlsState(true);
                   sendNotification(
                     "Prayer Time",
-                    `It's time for ${task.meta}: ${task.text}`
+                    `It's time for ${task.meta}: ${task.text}`,
                   );
                   triggerCompletion();
                 } else {
                   display.waitCount.innerText = formatTime(
-                    Math.floor(diff / 1000)
+                    Math.floor(diff / 1000),
                   );
                 }
               });
             }
           } else {
             console.warn(
-              `Prayer time not available for ${task.meta}. Please set location in settings.`
+              `Prayer time not available for ${task.meta}. Please set location in settings.`,
             );
           }
         } else if (task.type === "prayerTill") {
@@ -2370,7 +2398,7 @@
             }
           } else {
             console.warn(
-              `Prayer time not available for ${task.meta}. Please set location in settings.`
+              `Prayer time not available for ${task.meta}. Please set location in settings.`,
             );
           }
         } else if (task.type === "gate") {
@@ -2389,7 +2417,7 @@
                 triggerCompletion();
               } else {
                 display.waitCount.innerText = formatTime(
-                  Math.floor(diff / 1000)
+                  Math.floor(diff / 1000),
                 );
               }
             });
@@ -2473,12 +2501,12 @@
           doneBtn.classList.remove(
             "opacity-50",
             "cursor-not-allowed",
-            "pointer-events-none"
+            "pointer-events-none",
           );
           skipBtn.classList.remove(
             "opacity-50",
             "cursor-not-allowed",
-            "pointer-events-none"
+            "pointer-events-none",
           );
         } else {
           doneBtn.disabled = true;
@@ -2486,12 +2514,12 @@
           doneBtn.classList.add(
             "opacity-50",
             "cursor-not-allowed",
-            "pointer-events-none"
+            "pointer-events-none",
           );
           skipBtn.classList.add(
             "opacity-50",
             "cursor-not-allowed",
-            "pointer-events-none"
+            "pointer-events-none",
           );
         }
       }
@@ -2569,7 +2597,7 @@
           title,
           body,
           "Permission:",
-          Notification.permission
+          Notification.permission,
         );
         if ("Notification" in window && Notification.permission === "granted") {
           // Try direct Notification API first (works on desktop)
@@ -2594,7 +2622,7 @@
           }
         } else {
           console.log(
-            "Notification permission not granted or API not available"
+            "Notification permission not granted or API not available",
           );
         }
       }
@@ -2606,7 +2634,9 @@
             if (wakeLock !== null && document.visibilityState === "visible")
               wakeLock = await navigator.wakeLock.request("screen");
           });
-        } catch (err) {}
+        } catch (err) {
+          console.warn("Wake Lock not supported or failed:", err.message);
+        }
       }
 
       function setupEventListeners() {
@@ -2623,10 +2653,10 @@
 
         // NAV
         onClick("settings-btn", () =>
-          views.settings.classList.remove("translate-x-full")
+          views.settings.classList.remove("translate-x-full"),
         );
         onClick("close-settings-btn", () =>
-          views.settings.classList.add("translate-x-full")
+          views.settings.classList.add("translate-x-full"),
         );
         onClick("home-logo-btn", () => {
           views.settings.classList.add("translate-x-full");
@@ -2639,7 +2669,7 @@
           views.edit.classList.remove("translate-x-full");
         });
         onClick("close-edit-btn", () =>
-          views.edit.classList.add("translate-x-full")
+          views.edit.classList.add("translate-x-full"),
         );
 
         // MANAGE ROUTINES
@@ -2674,7 +2704,7 @@
 
         // Condition type change
         const conditionTypeSelect = document.getElementById(
-          "routine-condition-type"
+          "routine-condition-type",
         );
         if (conditionTypeSelect) {
           conditionTypeSelect.onchange = (e) =>
@@ -2725,7 +2755,7 @@
 
           // Validate prayer names in routine
           const prayerMatches = appState.rawRoutine.matchAll(
-            /\[(@|=>)Prayer:(\w+)\]/gi
+            /\[(@|=>)Prayer:(\w+)\]/gi,
           );
           const invalidPrayers = [];
           for (const match of prayerMatches) {
@@ -2738,9 +2768,9 @@
           if (invalidPrayers.length > 0) {
             const uniqueInvalid = [...new Set(invalidPrayers)];
             const warning = `Invalid prayer name(s): ${uniqueInvalid.join(
-              ", "
+              ", ",
             )}\n\nValid prayer names: ${VALID_PRAYER_NAMES.join(
-              ", "
+              ", ",
             )}\n\nDo you want to save anyway?`;
             if (!confirm(warning)) {
               return; // User cancelled, don't save
@@ -2866,14 +2896,14 @@
           applySettings();
           localStorage.setItem(
             "rr_settings",
-            JSON.stringify(appState.settings)
+            JSON.stringify(appState.settings),
           );
         });
         toggles.autoAdvance.addEventListener("change", (e) => {
           appState.settings.autoAdvance = e.target.checked;
           localStorage.setItem(
             "rr_settings",
-            JSON.stringify(appState.settings)
+            JSON.stringify(appState.settings),
           );
         });
 
@@ -2913,7 +2943,7 @@
             })
             .catch(() => {
               alert(
-                "Location saved, but failed to fetch prayer times. Please check your internet connection."
+                "Location saved, but failed to fetch prayer times. Please check your internet connection.",
               );
             });
         });
@@ -2959,7 +2989,7 @@
           } catch (error) {
             alert(
               "Failed to get location: " +
-                (error.message || "Permission denied or timeout")
+                (error.message || "Permission denied or timeout"),
             );
           } finally {
             btn.innerHTML = originalText;
@@ -2968,34 +2998,22 @@
         });
 
         // AUTH & CONFIG
-        onClick("save-config-btn", async () => {
-          const val = document.getElementById("config-input").value.trim();
-          try {
-            let config = val.startsWith("http")
-              ? await (await fetch(val)).json()
-              : JSON.parse(val);
-            if (!config.projectId) throw new Error();
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-            location.reload();
-          } catch (e) {
-            document.getElementById("setup-error").innerText = "Invalid Config";
-            document.getElementById("setup-error").classList.remove("hidden");
-          }
-        });
+        // save-config-btn removed
 
         const disconnectHandler = () => {
-          if (confirm("Disconnect?")) {
-            localStorage.removeItem(CONFIG_KEY);
-            location.reload();
+          if (confirm("Sign out?")) {
+            signOut(auth).then(() => {
+              location.reload();
+            });
           }
         };
-        onClick("login-reset-btn", disconnectHandler);
+        onClick("login-reset-btn", disconnectHandler); // Kept as "Reset" button for now, acts as logout
         onClick("settings-disconnect-btn", disconnectHandler);
 
         onClick("google-login-btn", () =>
           signInWithPopup(auth, new GoogleAuthProvider()).catch((e) =>
-            alert(e.message)
-          )
+            alert(e.message),
+          ),
         );
         onClick("settings-logout-btn", () => {
           if (confirm("Sign out?")) signOut(auth);
@@ -3012,7 +3030,7 @@
           }
         });
         onClick("cancel-quick-edit", () =>
-          document.getElementById("quick-edit-modal").classList.add("hidden")
+          document.getElementById("quick-edit-modal").classList.add("hidden"),
         );
         onClick("save-quick-edit", () => {
           const newVal = document.getElementById("quick-edit-input").value;
