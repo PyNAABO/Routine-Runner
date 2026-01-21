@@ -179,7 +179,8 @@
           font-size: 1.25rem !important;
         }
 
-        #timer-val {
+        #timer-val,
+        #wait-countdown {
           font-size: 2rem !important;
         }
 
@@ -250,7 +251,8 @@
           font-size: 1.1rem !important;
         }
 
-        #timer-val {
+        #timer-val,
+        #wait-countdown {
           font-size: 1.5rem !important;
         }
 
@@ -598,8 +600,7 @@
           </div>
           <textarea
             id="routine-input"
-            class="flex-1 text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-500 mb-4 border border-custom"
-            style="background-color: rgba(0, 0, 0, 0.2)"
+            class="flex-1 text-main p-4 rounded-xl mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 leading-relaxed placeholder-slate-500 mb-4 border border-custom bg-black/20"
             spellcheck="false"
             placeholder="Wake up [@06:30]&#10;Work [=>5:00 pm]&#10;Read [30m]"
           ></textarea>
@@ -931,17 +932,20 @@
                     class="absolute inset-0 bg-black/90 z-10 flex flex-col items-center justify-center hidden"
                   >
                     <i
-                      class="fas fa-hourglass-half text-blue-400 text-3xl mb-3 animate-pulse"
+                      class="fas fa-hourglass-half text-blue-400 text-3xl mb-2 animate-pulse"
                     ></i>
                     <h3 class="text-lg font-bold text-blue-200">
                       Waiting for <span id="wait-target-time">05:00</span>
                     </h3>
-                    <p class="text-slate-400 mono mt-2" id="wait-countdown">
+                    <p
+                      class="text-5xl font-bold text-slate-400 mono tracking-wider mt-2"
+                      id="wait-countdown"
+                    >
                       00:00:00
                     </p>
                     <button
                       id="force-start-btn"
-                      class="mt-8 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white border border-slate-700"
+                      class="mt-6 px-4 py-2 bg-slate-800 text-slate-400 rounded-lg text-xs hover:text-white border border-slate-700"
                     >
                       Force Start
                     </button>
@@ -954,12 +958,16 @@
                       class="text-6xl mb-4 block transform hover:scale-110 transition cursor-default"
                       >✅</span
                     >
-                    <h2 id="task-text" class="text-3xl font-bold leading-tight">
+                    <h2
+                      id="task-text"
+                      class="text-3xl font-bold leading-tight line-clamp-3 break-words"
+                    >
                       Task Name
                     </h2>
                     <a
                       id="task-link-btn"
                       target="_blank"
+                      rel="noopener noreferrer"
                       href="#"
                       class="hidden inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg hover:bg-blue-500/20 transition text-sm font-medium mt-4 cursor-pointer"
                     >
@@ -1660,6 +1668,15 @@
         const listEl = document.getElementById("routine-list");
         if (!listEl) return;
 
+        // Helper to escape HTML special chars (XSS prevention)
+        const escapeHtml = (str) =>
+          String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
         listEl.innerHTML = "";
 
         appState.routines.forEach((routine) => {
@@ -1681,24 +1698,24 @@
                       ? '<i class="fas fa-star text-yellow-500 text-xs"></i>'
                       : ""
                   }
-                  <span class="font-bold">${routine.name}</span>
+                  <span class="font-bold">${escapeHtml(routine.name)}</span>
                   ${
                     isActive
                       ? '<span class="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded">Active</span>'
                       : ""
                   }
                 </div>
-                <p class="text-xs text-muted-custom mt-1">${conditionText}</p>
+                <p class="text-xs text-muted-custom mt-1">${escapeHtml(conditionText)}</p>
               </div>
               <div class="flex gap-2">
-                <button class="edit-routine-item text-blue-400 hover:text-blue-300 p-2" data-id="${
-                  routine.id
-                }">
+                <button class="edit-routine-item text-blue-400 hover:text-blue-300 p-2" data-id="${escapeHtml(
+                  routine.id,
+                )}">
                   <i class="fas fa-pen text-sm"></i>
                 </button>
                 <button class="activate-routine-item text-emerald-400 hover:text-emerald-300 p-2 ${
                   isActive ? "hidden" : ""
-                }" data-id="${routine.id}">
+                }" data-id="${escapeHtml(routine.id)}">
                   <i class="fas fa-play text-sm"></i>
                 </button>
               </div>
