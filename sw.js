@@ -1,4 +1,4 @@
-const CACHE_NAME = "routine-runner-v7";
+const CACHE_NAME = "routine-runner-v8";
 const ASSETS = [
   "./",
   "./index.html",
@@ -29,6 +29,11 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
+
+  // Only cache GET requests (Cache API doesn't support POST, etc.)
+  if (e.request.method !== "GET") {
+    return;
+  }
 
   // Cache external dependencies (Firebase, Tailwind, Fonts)
   if (
