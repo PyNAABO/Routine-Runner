@@ -41,8 +41,10 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 
 - **Glassmorphism Design**: Modern, translucent card aesthetics with blurred backgrounds.
 - **Adaptive Themes**: Rich Dark Mode and Frosty Light Mode.
-- **Smooth Animations**: Fluid transitions for a polished feel.
+- **Smooth Animations**: Skeleton loaders, task slide transitions, and timer heartbeat.
 - **Smart Controls**: Pause/Resume timers, Skip, Undo, and Auto-Advance.
+- **Haptic Feedback**: Vibration on interactions (Android).
+- **Confetti Celebration**: Reward for completing your routine.
 
 ### 🔄 **Real-Time Synchronization**
 
@@ -79,7 +81,7 @@ cd Routine-Runner
 2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
 3. **Setup Firestore**: Create a database in **Production mode**.
 4. **Get Your Config**: Copy your Firebase config from Project Settings.
-5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1152) with your config.
+5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1256) with your config.
 
 #### **Step 3: Deploy**
 
@@ -238,6 +240,8 @@ On app load, the routine is automatically selected based on:
 - **Backend**: Firebase (Auth, Firestore).
 - **Storage**: LocalStorage for settings, Firestore for data.
 - **Logic**: Custom regex-based text parser with conditional evaluation.
+- **Dependencies**:
+  - [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) (CDN) for celebrations.
 
 ### **Data Structure**
 

@@ -27,6 +27,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap");
 
@@ -262,6 +263,77 @@
           padding: 0.5rem !important;
         }
       }
+      /* Animations */
+      @keyframes slideOutLeft {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(-20px);
+          opacity: 0;
+        }
+      }
+      @keyframes slideInRight {
+        from {
+          transform: translateX(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes pulse-slow {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .slide-out-left {
+        animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      .slide-in-right {
+        animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      .timer-running {
+        animation: pulse-slow 3s ease-in-out infinite;
+      }
+
+      /* Skeleton */
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.05) 25%,
+          rgba(255, 255, 255, 0.1) 50%,
+          rgba(255, 255, 255, 0.05) 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 0.5rem;
+      }
+      @keyframes skeleton-loading {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Micro-interactions */
+      button:active {
+        transform: scale(0.95);
+      }
+      .transition-transform {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+      }
     </style>
   </head>
   <body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom">
@@ -303,6 +375,35 @@
       >
         Sign Out
       </button>
+    </div>
+
+    <!-- SKELETON LOADER (Initially Visible) -->
+    <div
+      id="skeleton-loader"
+      class="fixed inset-0 bg-body z-[60] flex flex-col safe-bottom"
+    >
+      <div class="flex justify-between items-center p-4 border-b border-custom">
+        <div class="flex gap-3 items-center">
+          <div class="w-8 h-8 rounded-full skeleton"></div>
+          <div class="w-10 h-2 skeleton bg-slate-700"></div>
+        </div>
+        <div class="flex gap-4">
+          <div class="w-8 h-8 rounded-full skeleton"></div>
+        </div>
+      </div>
+
+      <div class="flex-1 p-6 flex flex-col gap-6 overflow-hidden">
+        <!-- Hero Card Skeleton -->
+        <div class="w-full h-64 rounded-3xl skeleton"></div>
+
+        <!-- Up Next List Skeleton -->
+        <div class="flex-1 flex flex-col gap-4 mt-8">
+          <div class="w-24 h-3 skeleton mb-2"></div>
+          <div class="w-full h-16 rounded-xl skeleton bg-slate-800/50"></div>
+          <div class="w-full h-16 rounded-xl skeleton bg-slate-800/50"></div>
+          <div class="w-full h-16 rounded-xl skeleton bg-slate-800/50"></div>
+        </div>
+      </div>
     </div>
 
     <!-- MAIN APP -->
@@ -1168,6 +1269,7 @@
       const screens = {
         login: document.getElementById("login-screen"),
         app: document.getElementById("app-screen"),
+        skeleton: document.getElementById("skeleton-loader"),
       };
       const views = {
         edit: document.getElementById("edit-view"),
@@ -1233,6 +1335,7 @@
         prayerTimes: null, // Cached prayer times for today
         prayerTimesDate: null, // Date for which prayer times are cached
         isPaused: false,
+        celebrationShown: false, // Flag to prevent confetti re-trigger
       };
 
       // Editing state (not persisted)
@@ -1240,9 +1343,29 @@
       let app, auth, db, user;
       let isSaving = false; // Flag to prevent sync overwrites during save
       let isOnline = navigator.onLine; // Track network status
-      let timerInterval, alarmLoopInterval, wakeLock;
+      let timerInterval, wakeLock;
       const alarmAudio = new Audio(ALARM_FILE);
       alarmAudio.loop = true;
+
+      // HAPTICS
+      function triggerHaptic(type) {
+        if (!navigator.vibrate) return;
+
+        switch (type) {
+          case "light":
+            navigator.vibrate(10);
+            break;
+          case "medium":
+            navigator.vibrate(50);
+            break;
+          case "heavy":
+            navigator.vibrate([200, 100, 200]);
+            break;
+          case "success":
+            navigator.vibrate([50, 50, 50]);
+            break;
+        }
+      }
 
       // --- INIT ---
       function init() {
@@ -1490,11 +1613,12 @@
               user = u;
               document.getElementById("user-avatar").src = u.photoURL;
               display.userId.innerText = u.uid.substring(0, 8) + "...";
-              showScreen("app");
+              // Don't show app screen yet, wait for sync (skeleton is visible)
+              // But we can trigger fetching
               initFirestoreListener();
               requestWakeLock();
             } else {
-              showScreen("login");
+              showScreen("login"); // This hides skeleton
             }
           });
         } catch (e) {
@@ -1514,6 +1638,12 @@
           docRef,
           (docSnap) => {
             showSyncStatus("Synced", "emerald");
+            // Data arrived, show app screen (hides skeleton)
+            if (
+              document.getElementById("app-screen").classList.contains("hidden")
+            ) {
+              showScreen("app");
+            }
             if (isSaving) return; // Ignore sync while saving locally
             if (docSnap.exists()) {
               const data = docSnap.data();
@@ -2072,6 +2202,7 @@
         appState.rawRoutine = routine.content;
         appState.currentTaskIndex = 0;
         appState.currentSubRoutineIndex = 0;
+        appState.celebrationShown = false; // Reset celebration flag
 
         inputs.routine.value = appState.rawRoutine;
 
@@ -2319,6 +2450,16 @@
       }
 
       function parseAndRender() {
+        // Simple visual transition logic
+        const container = document.getElementById("task-card");
+        if (container && !container.classList.contains("slide-in-right")) {
+          // Optional: Add slide-out class here if we want to wait, but that requires async structure.
+          // For now, we'll just add the slide-in animation on render.
+          container.classList.remove("slide-in-right");
+          void container.offsetWidth; // trigger reflow
+          container.classList.add("slide-in-right");
+        }
+
         appState.tasks = parseRoutine(appState.rawRoutine);
         setControlsState(true);
         stopAlarm();
@@ -2334,6 +2475,19 @@
           document.getElementById("all-done-state").classList.remove("hidden");
           document.getElementById("empty-state").classList.add("hidden");
           display.subRoutineIndicator.classList.add("hidden");
+
+          // Trigger Celebration (only once per completion)
+          if (!appState.celebrationShown) {
+            appState.celebrationShown = true;
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ["#10b981", "#3b82f6", "#f59e0b"],
+            });
+            triggerHaptic("success");
+          }
+
           return;
         }
         if (appState.tasks.length === 0) {
@@ -2383,9 +2537,9 @@
         display.taskText.innerText = displayTask.text || "Untitled";
         display.taskIcon.innerText = displayTask.icon;
 
-        // Link Button
+        // Link Button (with XSS protection)
         const linkBtn = document.getElementById("task-link-btn");
-        if (displayTask.link) {
+        if (displayTask.link && /^https?:\/\//i.test(displayTask.link)) {
           linkBtn.href = displayTask.link;
           linkBtn.classList.remove("hidden");
         } else {
@@ -2520,6 +2674,7 @@
         document.getElementById("timer-controls").classList.remove("hidden");
         let remaining = seconds;
         updateTimerDisplay(remaining);
+        display.timerVal.classList.add("timer-running");
         startTimerCheck(() => {
           remaining--;
           updateTimerDisplay(remaining);
@@ -2527,6 +2682,7 @@
             clearInterval(timerInterval);
             triggerCompletion();
             sendNotification("Timer Done", "Time is up!");
+            triggerHaptic("heavy");
           }
         });
       }
@@ -2540,6 +2696,7 @@
         } else {
           startAlarmLoop();
         }
+        display.timerVal.classList.remove("timer-running");
       }
 
       function startTimerCheck(cb) {
@@ -2560,9 +2717,11 @@
         if (appState.isPaused) {
           btn.innerHTML = '<i class="fas fa-play"></i>';
           display.timerVal.classList.add("opacity-50");
+          display.timerVal.classList.remove("timer-running");
         } else {
           btn.innerHTML = '<i class="fas fa-pause"></i>';
           display.timerVal.classList.remove("opacity-50");
+          display.timerVal.classList.add("timer-running");
         }
       }
 
@@ -2735,6 +2894,7 @@
           if (el) {
             el.onclick = (e) => {
               requestNotificationPermission(); // Try requesting on any click
+              triggerHaptic("light"); // Default haptic for all clicks
               fn(e);
             };
           }
@@ -2904,6 +3064,7 @@
             appState.currentTaskIndex++;
           }
 
+          triggerHaptic("medium");
           saveStateToCloud();
           parseAndRender();
         });
@@ -2928,6 +3089,7 @@
             appState.currentTaskIndex++;
           }
 
+          triggerHaptic("medium");
           saveStateToCloud();
           parseAndRender();
         });

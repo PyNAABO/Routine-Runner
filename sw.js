@@ -1,4 +1,4 @@
-const CACHE_NAME = "routine-runner-v8";
+const CACHE_NAME = "routine-runner-v9";
 const ASSETS = [
   "./",
   "./index.html",
@@ -40,7 +40,8 @@ self.addEventListener("fetch", (e) => {
     url.hostname.includes("tailwindcss.com") ||
     url.hostname.includes("cloudflare.com") ||
     url.hostname.includes("googleapis.com") ||
-    url.hostname.includes("gstatic.com")
+    url.hostname.includes("gstatic.com") ||
+    url.hostname.includes("jsdelivr.net")
   ) {
     e.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
