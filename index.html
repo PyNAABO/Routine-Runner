@@ -15,7 +15,7 @@
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#0f172a" id="theme-color-meta" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
@@ -518,6 +518,31 @@
                 />
                 <label
                   for="auto-advance-toggle"
+                  class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
+                ></label>
+              </div>
+            </div>
+
+            <!-- Wake Lock -->
+            <div
+              class="flex justify-between items-center p-4 border border-custom rounded-xl"
+            >
+              <div class="flex items-center gap-3">
+                <i class="fas fa-sun text-yellow-400"></i>
+                <div>
+                  <span class="font-medium block">Wake Lock</span>
+                  <span class="text-xs text-muted-custom">Keep screen on</span>
+                </div>
+              </div>
+              <div class="relative inline-block w-10 align-middle select-none">
+                <input
+                  type="checkbox"
+                  id="wake-lock-toggle"
+                  checked
+                  class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                />
+                <label
+                  for="wake-lock-toggle"
                   class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"
                 ></label>
               </div>
@@ -1115,11 +1140,11 @@
         signOut,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import {
-        getFirestore,
+        initializeFirestore,
+        persistentLocalCache,
         doc,
         onSnapshot,
         setDoc,
-        enableIndexedDbPersistence,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       // CONFIG
@@ -1177,6 +1202,7 @@
       const toggles = {
         theme: document.getElementById("theme-toggle"),
         autoAdvance: document.getElementById("auto-advance-toggle"),
+        wakeLock: document.getElementById("wake-lock-toggle"),
       };
 
       // GLOBAL STATE
@@ -1195,6 +1221,7 @@
         settings: {
           darkMode: true,
           autoAdvance: false,
+          wakeLock: true,
           prayerLocation: {
             latitude: null,
             longitude: null,
@@ -1269,6 +1296,13 @@
         }
         toggles.theme.checked = appState.settings.darkMode;
         toggles.autoAdvance.checked = appState.settings.autoAdvance;
+        toggles.wakeLock.checked = appState.settings.wakeLock !== false;
+
+        if (appState.settings.wakeLock !== false) {
+          requestWakeLock();
+        } else {
+          releaseWakeLock();
+        }
       }
 
       // --- PRAYER TIME FUNCTIONALITY ---
@@ -1440,17 +1474,10 @@
         try {
           app = initializeApp(config);
           auth = getAuth(app);
-          db = getFirestore(app);
 
-          // Enable offline persistence for Firestore
-          enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code === "failed-precondition") {
-              console.warn(
-                "Multiple tabs open, persistence enabled in first tab only",
-              );
-            } else if (err.code === "unimplemented") {
-              console.warn("Browser doesn't support offline persistence");
-            }
+          // Use the new cache API for offline persistence
+          db = initializeFirestore(app, {
+            localCache: persistentLocalCache(),
           });
 
           onAuthStateChanged(auth, (u) => {
@@ -2268,6 +2295,9 @@
         stopAlarm();
         clearInterval(timerInterval);
 
+        // Clamp currentTaskIndex to valid bounds
+        if (appState.currentTaskIndex < 0) appState.currentTaskIndex = 0;
+
         if (appState.currentTaskIndex >= appState.tasks.length) {
           document
             .getElementById("active-task-container")
@@ -2609,50 +2639,63 @@
       }
 
       function sendNotification(title, body) {
-        console.log(
-          "sendNotification called:",
-          title,
-          body,
-          "Permission:",
-          Notification.permission,
-        );
         if ("Notification" in window && Notification.permission === "granted") {
           // Try direct Notification API first (works on desktop)
           try {
-            console.log("Sending via Notification API");
             new Notification(title, { body, icon: "assets/RR.png" });
           } catch (e) {
             // If direct Notification fails (e.g., on some mobile browsers), use ServiceWorker
-            console.log("Direct notification failed, trying ServiceWorker:", e);
             if (navigator.serviceWorker && navigator.serviceWorker.ready) {
               navigator.serviceWorker.ready
                 .then((registration) => {
-                  console.log("Sending via ServiceWorker");
                   registration.showNotification(title, {
                     body: body,
                     icon: "assets/RR.png",
                     vibrate: [200, 100, 200],
                   });
                 })
-                .catch((err) => console.error("SW notification failed:", err));
+                .catch(() => {}); // Silently fail
             }
           }
-        } else {
-          console.log(
-            "Notification permission not granted or API not available",
-          );
         }
       }
 
+      let wakeLockListenerAdded = false;
+
       async function requestWakeLock() {
+        if (!appState.settings.wakeLock) return;
         try {
           wakeLock = await navigator.wakeLock.request("screen");
-          document.addEventListener("visibilitychange", async () => {
-            if (wakeLock !== null && document.visibilityState === "visible")
-              wakeLock = await navigator.wakeLock.request("screen");
-          });
+          // Only add the listener once
+          if (!wakeLockListenerAdded) {
+            wakeLockListenerAdded = true;
+            document.addEventListener("visibilitychange", async () => {
+              if (
+                document.visibilityState === "visible" &&
+                appState.settings.wakeLock &&
+                (!wakeLock || wakeLock.released)
+              ) {
+                try {
+                  wakeLock = await navigator.wakeLock.request("screen");
+                } catch (err) {
+                  // Silently fail on re-acquire
+                }
+              }
+            });
+          }
         } catch (err) {
-          console.warn("Wake Lock not supported or failed:", err.message);
+          // Wake Lock not supported or failed - silently ignore
+        }
+      }
+
+      async function releaseWakeLock() {
+        if (wakeLock && typeof wakeLock.release === "function") {
+          try {
+            await wakeLock.release();
+            wakeLock = null;
+          } catch (err) {
+            console.warn("Wake Lock release failed:", err.message);
+          }
         }
       }
 
@@ -2922,6 +2965,18 @@
             "rr_settings",
             JSON.stringify(appState.settings),
           );
+        });
+        toggles.wakeLock.addEventListener("change", (e) => {
+          appState.settings.wakeLock = e.target.checked;
+          localStorage.setItem(
+            "rr_settings",
+            JSON.stringify(appState.settings),
+          );
+          if (appState.settings.wakeLock) {
+            requestWakeLock();
+          } else {
+            releaseWakeLock();
+          }
         });
 
         // PRAYER SETTINGS

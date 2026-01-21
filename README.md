@@ -54,7 +54,7 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 
 - **PWA Ready**: Install on Android/iOS for native app experience.
 - **Touch Controls**: Large buttons and gestures for mobile use.
-- **Wake Lock**: Keeps screen active during timed tasks.
+- **Wake Lock**: Keeps screen active during timed tasks (configurable in Settings).
 
 ---
 
@@ -79,7 +79,7 @@ cd Routine-Runner
 2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
 3. **Setup Firestore**: Create a database in **Production mode**.
 4. **Get Your Config**: Copy your Firebase config from Project Settings.
-5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1126) with your config.
+5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1152) with your config.
 
 #### **Step 3: Deploy**
 
