@@ -1537,9 +1537,18 @@
                 data.currentSubRoutineIndex || 0;
               appState.history = data.history || {};
 
-              // Sync Settings
+              // Sync Settings - Cloud is authoritative for cross-device sync
               if (data.settings) {
-                appState.settings = { ...appState.settings, ...data.settings };
+                // Fully replace with cloud settings (don't merge with local)
+                appState.settings = {
+                  // Provide defaults for any missing keys
+                  darkMode: true,
+                  autoAdvance: false,
+                  wakeLock: true,
+                  prayerLocation: { latitude: null, longitude: null },
+                  // Override with cloud data
+                  ...data.settings,
+                };
                 applySettings();
                 // Update local cache for next offline boot
                 localStorage.setItem(
