@@ -1148,6 +1148,9 @@
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       // CONFIG
+      // SECURITY NOTE: This Firebase config is safe to be public. These are client-side
+      // credentials designed to identify your project, NOT authenticate it. Security is
+      // enforced by Firebase Security Rules, not this API key. Never add backend secrets here.
       // TODO: Replace with your actual Firebase Configuration
       const FIREBASE_CONFIG = {
         apiKey: "AIzaSyCCHeGuHqy2aQzwmmy7G7tGEs0v_t6hmkE",
@@ -1563,6 +1566,9 @@
       }
 
       async function saveStateToCloud() {
+        // ALWAYS save to local storage first (Reliability/Offline fix)
+        localStorage.setItem("rr_settings", JSON.stringify(appState.settings));
+
         if (!user) return;
         isSaving = true;
         showSyncStatus("Saving...", "blue");
@@ -1580,11 +1586,6 @@
               lastUpdated: Date.now(),
             },
             { merge: true },
-          );
-          // Also update local cache for offline boot
-          localStorage.setItem(
-            "rr_settings",
-            JSON.stringify(appState.settings),
           );
           showSyncStatus("Synced", "emerald");
         } catch (e) {
