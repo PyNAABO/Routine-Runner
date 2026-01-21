@@ -1331,11 +1331,13 @@
       }
 
       function savePrayerLocation() {
+        // Keep the legacy/backup "rr_prayer_location" as requested
         localStorage.setItem(
           "rr_prayer_location",
           JSON.stringify(appState.settings.prayerLocation),
         );
-        localStorage.setItem("rr_settings", JSON.stringify(appState.settings));
+        // Sync to cloud (this also updates "rr_settings" in localStorage via saveStateToCloud)
+        saveStateToCloud();
       }
 
       async function getDailyPrayerTimes() {
@@ -1532,6 +1534,17 @@
                 data.currentSubRoutineIndex || 0;
               appState.history = data.history || {};
 
+              // Sync Settings
+              if (data.settings) {
+                appState.settings = { ...appState.settings, ...data.settings };
+                applySettings();
+                // Update local cache for next offline boot
+                localStorage.setItem(
+                  "rr_settings",
+                  JSON.stringify(appState.settings),
+                );
+              }
+
               if (document.activeElement !== inputs.routine)
                 inputs.routine.value = appState.rawRoutine;
 
@@ -1563,9 +1576,15 @@
               currentTaskIndex: appState.currentTaskIndex,
               currentSubRoutineIndex: appState.currentSubRoutineIndex,
               history: appState.history,
+              settings: appState.settings,
               lastUpdated: Date.now(),
             },
             { merge: true },
+          );
+          // Also update local cache for offline boot
+          localStorage.setItem(
+            "rr_settings",
+            JSON.stringify(appState.settings),
           );
           showSyncStatus("Synced", "emerald");
         } catch (e) {
@@ -2954,29 +2973,20 @@
         toggles.theme.addEventListener("change", (e) => {
           appState.settings.darkMode = e.target.checked;
           applySettings();
-          localStorage.setItem(
-            "rr_settings",
-            JSON.stringify(appState.settings),
-          );
+          saveStateToCloud();
         });
         toggles.autoAdvance.addEventListener("change", (e) => {
           appState.settings.autoAdvance = e.target.checked;
-          localStorage.setItem(
-            "rr_settings",
-            JSON.stringify(appState.settings),
-          );
+          saveStateToCloud();
         });
         toggles.wakeLock.addEventListener("change", (e) => {
           appState.settings.wakeLock = e.target.checked;
-          localStorage.setItem(
-            "rr_settings",
-            JSON.stringify(appState.settings),
-          );
           if (appState.settings.wakeLock) {
             requestWakeLock();
           } else {
             releaseWakeLock();
           }
+          saveStateToCloud();
         });
 
         // PRAYER SETTINGS
