@@ -1,4 +1,4 @@
-const CACHE_NAME = "routine-runner-v9";
+const CACHE_NAME = "routine-runner-v11";
 const ASSETS = [
   "./",
   "./index.html",

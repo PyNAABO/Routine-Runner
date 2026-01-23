@@ -334,6 +334,36 @@
         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
         transition-duration: 150ms;
       }
+
+      /* Accessibility: Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Accessibility: Better focus indicators */
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      /* Keyboard shortcut hint badges */
+      .kbd-hint {
+        font-size: 0.6rem;
+        padding: 0.1rem 0.3rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0.25rem;
+        margin-left: 0.5rem;
+        opacity: 0.7;
+      }
     </style>
   </head>
   <body class="h-dvh w-screen overflow-hidden flex flex-col safe-bottom">
@@ -1365,6 +1395,42 @@
             navigator.vibrate([50, 50, 50]);
             break;
         }
+      }
+
+      // --- UTILITIES ---
+      // Debounce utility for performance
+      function debounce(fn, delay) {
+        let timeoutId;
+        return (...args) => {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      // Safe async wrapper for error handling
+      function safeAsync(fn) {
+        return async (...args) => {
+          try {
+            return await fn(...args);
+          } catch (err) {
+            console.error("Error in async handler:", err);
+            showSyncStatus("Error!", "red");
+          }
+        };
+      }
+
+      // Check if any modal/overlay is open
+      function isModalOpen() {
+        return (
+          !views.settings.classList.contains("translate-x-full") ||
+          !views.edit.classList.contains("translate-x-full") ||
+          !views.manageRoutines.classList.contains("translate-x-full") ||
+          !views.routineEditor.classList.contains("hidden") ||
+          !views.logs.classList.contains("hidden") ||
+          !document
+            .getElementById("quick-edit-modal")
+            .classList.contains("hidden")
+        );
       }
 
       // --- INIT ---
@@ -2449,6 +2515,9 @@
         return result;
       }
 
+      // Debounced version for rapid state changes (e.g., during sync)
+      const debouncedParseAndRender = debounce(parseAndRender, 100);
+
       function parseAndRender() {
         // Simple visual transition logic
         const container = document.getElementById("task-card");
@@ -2800,7 +2869,13 @@
               parseInt(parts[1]) * 60 +
               parseInt(parts[2])
             : parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        startCountDown(currentSecs + secs);
+        // Bug fix: Prevent negative timer values
+        const newSecs = Math.max(0, currentSecs + secs);
+        if (newSecs > 0) {
+          startCountDown(newSecs);
+        } else {
+          updateTimerDisplay(0);
+        }
       };
 
       function getNextOccurrence(timeStr) {
@@ -2959,6 +3034,42 @@
           conditionTypeSelect.onchange = (e) =>
             showConditionSelector(e.target.value);
         }
+
+        // KEYBOARD SHORTCUTS (Space=Done, S=Skip, U=Undo, P=Pause, Esc=Close)
+        document.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+            if (e.key === "Escape") e.target.blur();
+            return;
+          }
+          if (e.key === "Escape") {
+            views.settings.classList.add("translate-x-full");
+            views.edit.classList.add("translate-x-full");
+            views.manageRoutines.classList.add("translate-x-full");
+            views.routineEditor.classList.add("hidden");
+            views.logs.classList.add("hidden");
+            document.getElementById("quick-edit-modal").classList.add("hidden");
+            return;
+          }
+          if (isModalOpen()) return;
+          switch (e.key.toLowerCase()) {
+            case " ":
+              e.preventDefault();
+              document.getElementById("done-btn")?.click();
+              break;
+            case "s":
+              e.preventDefault();
+              document.getElementById("skip-btn")?.click();
+              break;
+            case "u":
+              e.preventDefault();
+              document.getElementById("undo-btn")?.click();
+              break;
+            case "p":
+              e.preventDefault();
+              document.getElementById("pause-btn")?.click();
+              break;
+          }
+        });
 
         // Weekday buttons toggle
         document.querySelectorAll(".weekday-btn").forEach((btn) => {

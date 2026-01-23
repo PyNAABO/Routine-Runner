@@ -43,6 +43,7 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 - **Adaptive Themes**: Rich Dark Mode and Frosty Light Mode.
 - **Smooth Animations**: Skeleton loaders, task slide transitions, and timer heartbeat.
 - **Smart Controls**: Pause/Resume timers, Skip, Undo, and Auto-Advance.
+- **Keyboard Shortcuts**: `Space`=Done, `S`=Skip, `U`=Undo, `P`=Pause, `Esc`=Close.
 - **Haptic Feedback**: Vibration on interactions (Android).
 - **Confetti Celebration**: Reward for completing your routine.
 
@@ -81,7 +82,7 @@ cd Routine-Runner
 2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
 3. **Setup Firestore**: Create a database in **Production mode**.
 4. **Get Your Config**: Copy your Firebase config from Project Settings.
-5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1256) with your config.
+5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1286) with your config.
 
 #### **Step 3: Deploy**
 
