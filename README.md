@@ -59,6 +59,13 @@ Routine Runner solves the **"cold start" problem** of daily habits. Instead of m
 - **Touch Controls**: Large buttons and gestures for mobile use.
 - **Wake Lock**: Keeps screen active during timed tasks (configurable in Settings).
 
+### 🔔 **Notifications & Alarms**
+
+- **Audio Alerts**: Custom alarm sound plays when timer completes (requires user interaction first).
+- **Visual Fallback**: Timer pulses if audio is blocked by browser.
+- **Browser Notifications**: System notifications when tasks are ready (requires permission).
+- **Haptic Feedback**: Vibration on task completion (Android).
+
 ---
 
 ## ⚙️ Quick Start
@@ -82,7 +89,7 @@ cd Routine-Runner
 2. **Enable Authentication**: Enable **Google** provider in Authentication settings.
 3. **Setup Firestore**: Create a database in **Production mode**.
 4. **Get Your Config**: Copy your Firebase config from Project Settings.
-5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1286) with your config.
+5. **Update the App**: Replace the `FIREBASE_CONFIG` object in `index.html` (around line 1293) with your config.
 
 #### **Step 3: Deploy**
 
@@ -237,12 +244,22 @@ On app load, the routine is automatically selected based on:
 
 ## 🛠️ Technical Architecture
 
-- **Frontend**: HTML5, Vanilla JS, Tailwind CSS via CDN.
-- **Backend**: Firebase (Auth, Firestore).
-- **Storage**: LocalStorage for settings, Firestore for data.
+- **Frontend**: HTML5, Vanilla JavaScript, Tailwind CSS via CDN.
+- **Backend**: Firebase (Auth, Firestore) v11.6.1.
+- **Storage**: LocalStorage for settings/preferences, Firestore for routines and history.
 - **Logic**: Custom regex-based text parser with conditional evaluation.
-- **Dependencies**:
-  - [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) (CDN) for celebrations.
+- **PWA**: Service Worker for offline caching (v11).
+- **External Dependencies**:
+  - [Tailwind CSS](https://tailwindcss.com/) (CDN) - Styling
+  - [Font Awesome 6.4](https://fontawesome.com/) (CDN) - Icons
+  - [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) (CDN) - Celebrations
+  - [Al Adhan API](https://aladhan.com/) - Prayer times
+
+### Security Notes
+
+- The Firebase API key in the code is public-safe (client-side credentials)
+- Configure API key restrictions in Firebase Console for production use
+- All user data is stored in their own Firebase project (privacy-first)
 
 ### **Data Structure**
 
@@ -261,7 +278,14 @@ On app load, the routine is automatically selected based on:
   activeRoutineId: "routine-uuid",
   currentTaskIndex: 0,
   currentSubRoutineIndex: 0,
-  history: { "2024-01-15": [...] }
+  history: { "2024-01-15": [...] },
+  settings: {
+    darkMode: true,
+    autoAdvance: false,
+    wakeLock: true,
+    prayerLocation: { latitude: null, longitude: null }
+  },
+  lastUpdated: 1706000000000
 }
 
 // Parsed Task Object
@@ -269,12 +293,13 @@ On app load, the routine is automatically selected based on:
   id: 0,
   text: "Morning Routine",
   icon: "🌅",
-  type: "gate",           // gate | timer | till | standard
+  type: "gate",           // gate | timer | till | standard | prayerGate | prayerTill
   meta: "06:00",          // Time or duration
-  isHigh: false,          // Priority flag
+  isHigh: false,           // Priority flag
   link: "https://...",    // Optional URL
   isSubRoutineParent: false,
-  subRoutines: []         // Nested tasks for sub-routines
+  isSubRoutineItem: false,
+  subRoutines: []          // Nested tasks for sub-routines
 }
 ```
 

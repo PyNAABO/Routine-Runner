@@ -303,6 +303,13 @@
       .timer-running {
         animation: pulse-slow 3s ease-in-out infinite;
       }
+      .alarm-pulse {
+        animation: alarm-pulse 1s ease-in-out infinite;
+      }
+      @keyframes alarm-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
 
       /* Skeleton */
       .skeleton {
@@ -1294,6 +1301,8 @@
       };
 
       const ALARM_FILE = "assets/iphone_alarm.mp3";
+      let audioUnlocked = false;
+      let audioLoadAttempted = false;
 
       // DOM
       const screens = {
@@ -1376,6 +1385,7 @@
       let timerInterval, wakeLock;
       const alarmAudio = new Audio(ALARM_FILE);
       alarmAudio.loop = true;
+      alarmAudio.volume = 1.0; // Maximum volume
 
       // HAPTICS
       function triggerHaptic(type) {
@@ -1458,11 +1468,16 @@
         }
 
         const savedSettings = localStorage.getItem("rr_settings");
-        if (savedSettings)
-          appState.settings = {
-            ...appState.settings,
-            ...JSON.parse(savedSettings),
-          };
+        if (savedSettings) {
+          try {
+            appState.settings = {
+              ...appState.settings,
+              ...JSON.parse(savedSettings),
+            };
+          } catch (e) {
+            console.error("Failed to parse local settings, using defaults:", e);
+          }
+        }
         applySettings();
         loadPrayerLocation();
         // Fetch prayer times if location is set
@@ -1505,17 +1520,19 @@
         if (saved) {
           try {
             const location = JSON.parse(saved);
-            appState.settings.prayerLocation = {
-              latitude: location.latitude || null,
-              longitude: location.longitude || null,
-            };
-            // Update UI if elements exist
-            const latInput = document.getElementById("prayer-latitude");
-            const lonInput = document.getElementById("prayer-longitude");
-            if (latInput)
-              latInput.value = appState.settings.prayerLocation.latitude || "";
-            if (lonInput)
-              lonInput.value = appState.settings.prayerLocation.longitude || "";
+            if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
+              appState.settings.prayerLocation = {
+                latitude: location.latitude,
+                longitude: location.longitude,
+              };
+              // Update UI if elements exist
+              const latInput = document.getElementById("prayer-latitude");
+              const lonInput = document.getElementById("prayer-longitude");
+              if (latInput)
+                latInput.value = appState.settings.prayerLocation.latitude || "";
+              if (lonInput)
+                lonInput.value = appState.settings.prayerLocation.longitude || "";
+            }
           } catch (e) {
             console.error("Failed to load prayer location:", e);
           }
@@ -1574,6 +1591,22 @@
 
           if (!response.ok) throw new Error(`Error: ${response.status}`);
           const json = await response.json();
+          
+          // Validate response structure
+          if (!json || !json.data || !json.data.timings) {
+            console.warn("Invalid API response structure");
+            return null;
+          }
+          
+          // Validate required prayer times exist
+          const timings = json.data.timings;
+          const requiredPrayers = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
+          const hasValidTimings = requiredPrayers.some(p => timings[p] && typeof timings[p] === 'string');
+          if (!hasValidTimings) {
+            console.warn("Missing prayer time data in API response");
+            return null;
+          }
+          
           return json.data;
         } catch (error) {
           if (error.name === "AbortError") {
@@ -1612,7 +1645,7 @@
         if (cached) {
           try {
             const cachedData = JSON.parse(cached);
-            if (cachedData.date === today && cachedData.timings) {
+            if (cachedData && cachedData.date === today && cachedData.timings && typeof cachedData.timings === 'object') {
               console.log("Using cached prayer times from localStorage");
               appState.prayerTimes = cachedData.timings;
               appState.prayerTimesDate = today;
@@ -1733,16 +1766,20 @@
                 data.currentSubRoutineIndex || 0;
               appState.history = data.history || {};
 
-              // Sync Settings - Cloud is authoritative for cross-device sync
+              // Sync Settings - Smart merge: keep local preferences, sync routine data
               if (data.settings) {
-                // Fully replace with cloud settings (don't merge with local)
+                // Preserve local preferences (theme, wake lock) - these are device-specific
+                const localPrefs = {
+                  darkMode: appState.settings.darkMode,
+                  wakeLock: appState.settings.wakeLock,
+                };
+                
+                // Merge cloud settings with local preferences
                 appState.settings = {
-                  // Provide defaults for any missing keys
-                  darkMode: true,
+                  darkMode: localPrefs.darkMode,
+                  wakeLock: localPrefs.wakeLock,
                   autoAdvance: false,
-                  wakeLock: true,
                   prayerLocation: { latitude: null, longitude: null },
-                  // Override with cloud data
                   ...data.settings,
                 };
                 applySettings();
@@ -2515,9 +2552,6 @@
         return result;
       }
 
-      // Debounced version for rapid state changes (e.g., during sync)
-      const debouncedParseAndRender = debounce(parseAndRender, 100);
-
       function parseAndRender() {
         // Simple visual transition logic
         const container = document.getElementById("task-card");
@@ -2532,7 +2566,7 @@
         appState.tasks = parseRoutine(appState.rawRoutine);
         setControlsState(true);
         stopAlarm();
-        clearInterval(timerInterval);
+        if (timerInterval) clearInterval(timerInterval);
 
         // Clamp currentTaskIndex to valid bounds
         if (appState.currentTaskIndex < 0) appState.currentTaskIndex = 0;
@@ -2548,12 +2582,14 @@
           // Trigger Celebration (only once per completion)
           if (!appState.celebrationShown) {
             appState.celebrationShown = true;
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-              colors: ["#10b981", "#3b82f6", "#f59e0b"],
-            });
+            if (typeof confetti === 'function') {
+              confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ["#10b981", "#3b82f6", "#f59e0b"],
+              });
+            }
             triggerHaptic("success");
           }
 
@@ -2829,27 +2865,40 @@
       }
 
       function startAlarmLoop() {
-        alarmAudio.play().catch((e) => console.log("Audio block", e));
+        alarmAudio.currentTime = 0;
+        alarmAudio.play().catch((e) => {
+          console.warn("Alarm play failed:", e.message);
+          // Show visual indicator if audio fails
+          display.timerVal.classList.add("alarm-pulse");
+        });
       }
       function stopAlarm() {
         alarmAudio.pause();
         alarmAudio.currentTime = 0;
+        display.timerVal.classList.remove("alarm-pulse");
       }
 
       // Unlock Audio on First Interaction
       function unlockAudio() {
+        if (audioUnlocked) return;
+        
         alarmAudio
           .play()
           .then(() => {
             alarmAudio.pause();
             alarmAudio.currentTime = 0;
-            document.removeEventListener("click", unlockAudio);
-            document.removeEventListener("touchstart", unlockAudio);
+            audioUnlocked = true;
+            console.log("Audio unlocked successfully");
           })
-          .catch((e) => {});
+          .catch((e) => {
+            console.warn("Audio unlock failed:", e.message);
+          });
       }
-      document.addEventListener("click", unlockAudio);
-      document.addEventListener("touchstart", unlockAudio);
+      
+      // Try to unlock on any interaction
+      document.addEventListener("click", unlockAudio, { once: false });
+      document.addEventListener("touchstart", unlockAudio, { once: false });
+      document.addEventListener("keydown", unlockAudio, { once: false });
 
       function updateTimerDisplay(s) {
         const h = Math.floor(s / 3600),
@@ -2879,7 +2928,21 @@
       };
 
       function getNextOccurrence(timeStr) {
-        const [h, m] = timeStr.split(":").map(Number);
+        if (!timeStr || typeof timeStr !== "string") {
+          console.warn("Invalid time string:", timeStr);
+          return new Date();
+        }
+        const parts = timeStr.split(":");
+        if (parts.length !== 2) {
+          console.warn("Invalid time format:", timeStr);
+          return new Date();
+        }
+        const h = Number(parts[0]);
+        const m = Number(parts[1]);
+        if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
+          console.warn("Invalid time values:", timeStr);
+          return new Date();
+        }
         const d = new Date();
         d.setHours(h, m, 0, 0);
         return d;
@@ -3248,7 +3311,7 @@
           display.waitOverlay.classList.add("hidden");
           setControlsState(true);
           stopAlarm();
-          clearInterval(timerInterval);
+          if (timerInterval) clearInterval(timerInterval);
         });
         onClick("pause-btn", togglePause);
 
@@ -3399,7 +3462,9 @@
         );
         onClick("save-quick-edit", () => {
           const newVal = document.getElementById("quick-edit-input").value;
-          const taskID = appState.tasks[appState.currentTaskIndex].id;
+          const task = appState.tasks[appState.currentTaskIndex];
+          if (!task) return;
+          const taskID = task.id;
           const lines = appState.rawRoutine.split("\n");
           if (lines[taskID] !== undefined) {
             lines[taskID] = newVal;
