@@ -62,7 +62,24 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // Local assets: Cache First, fallback to Network
+  // index.html: Network First (always get latest), fallback to cache
+  if (url.pathname === "/" || url.pathname.endsWith("index.html")) {
+    e.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        try {
+          const fetched = await fetch(e.request);
+          cache.put(e.request, fetched.clone());
+          return fetched;
+        } catch (err) {
+          const cached = await cache.match(e.request);
+          return cached || new Response("Offline", { status: 503 });
+        }
+      }),
+    );
+    return;
+  }
+
+  // Other local assets: Cache First, fallback to Network
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request)),
   );

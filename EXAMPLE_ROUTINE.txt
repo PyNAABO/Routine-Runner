@@ -1,0 +1,63 @@
+─── ROUTINE RUNNER — SYNTAX CHEATSHEET ────────────────────────────────────────
+
+This example routine demonstrates ALL the features of Routine Runner.
+Copy-paste sections or use it as a template for your own routines.
+
+
+📋 FULL EXAMPLE ───────────────────────────────────────────────────────────────
+
+🌅 Wake Up [@06:30]                          # gate: waits until 6:30 AM
+🦷 Brush Teeth [5m]                          # timer: 5 min countdown
+🧘 Morning Stretch:                          # sub-routine parent (ends with colon)
+- Deep breathing [2m]                        # sub-routine item with timer
+- Sun salutation [3m]                        # sub-routine item with timer
+📖 ==Daily Insights== [15m]                  # high priority (==...==) + timer
+☕ Breakfast [=>08:00]                        # till: countdown until 8:00 AM
+💻 Focus Session:                            # sub-routine parent
+- Plan top 3 [5m]                            # sub timer
+- Deep work [120m]                           # 2 hour timer
+- Review & log [10m]                         # timer review
+🕌 Fajr Prayer [@Prayer:Fajr]                # prayer gate: waits until Fajr time
+📚 Study [90m]                               # 1h30m timer (90 minutes)
+🔥 ==Gym==:                                  # high priority sub-routine parent
+- Cardio [20m]                               # sub timer
+- Strength [30m]                             # sub timer
+🕌 Dhuhr Prayer [@Prayer:Dhuhr]              # prayer gate
+🥗 Lunch [=>Prayer:Dhuhr]                    # prayer till: countdown until Dhuhr
+💼 Submit report [https://example.com]       # task with clickable link
+IF:FRI::🕌 Jumu'ah Prep [20m] | ELSE::🕌 Asr Prayer [@Prayer:Asr]   # IF on Fri, ELSE other days
+🚶 Evening Walk [45m]                        # timer walk
+📝 ==Daily Review==:                         # high priority sub-routine parent
+- Log completed tasks                        # standard sub item (no timer)
+- Plan tomorrow [10m]                        # sub timer
+IF:SAT::🎬 Movie Night [120m] | ELSE::🎧 Personal Project [60m]     # weekend conditional
+🌙 Wind Down [15m]                           # timer wind down
+🕌 Isha Prayer [@Prayer:Isha]                # prayer gate
+😴 Sleep [@22:00]                            # gate: waits until 10:00 PM
+
+
+🔧 SYNTAX REFERENCE ───────────────────────────────────────────────────────────
+
+┌──────────────────────┬────────────────────┬─────────────────────────────────┐
+│ Feature              │ Syntax             │ Description                     │
+├──────────────────────┼────────────────────┼─────────────────────────────────┤
+│ Basic task           │ Task text          │ Just type it                    │
+│ Timer countdown      │ [30m]              │ Countdown timer in minutes      │
+│ Gate (wait until)    │ [@06:30]           │ Wait until specific time        │
+│ Till (countdown to)  │ [=>08:00]          │ Timer until a specific time     │
+│ Prayer gate          │ [@Prayer:Fajr]     │ Wait until prayer time          │
+│ Prayer till          │ [=>Prayer:Fajr]    │ Timer until prayer time         │
+│ Link                 │ [https://...]      │ Clickable link on task card     │
+│ High priority        │ ==Task name==      │ Highlighted with emphasis       │
+│ Sub-routine parent   │ Task name:         │ Ends with colon, children below │
+│ Sub-routine item     │ - Subtask [5m]     │ Indented with dash + space      │
+│ IF condition         │ IF:DAY::task       │ Runs only on specified day      │
+│ IF/ELSE              │ IF:DAY::a | ELSE::b│ Day-conditional with fallback   │
+│ Comment              │ # comment          │ Ignored by parser               │
+│ Icon                 │ 🎯 Task text       │ First emoji becomes icon        │
+└──────────────────────┴────────────────────┴─────────────────────────────────┘
+
+Day names for IF conditions: SUN, MON, TUE, WED, THU, FRI, SAT
+Use ! prefix to negate: IF:!MON::task (runs every day except Monday)
+Prayer names: Fajr, Dhuhr, Asr, Maghrib, Isha
+Time format (24h): HH:MM (e.g., 06:30, 14:00, 22:00)
