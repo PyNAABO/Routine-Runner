@@ -288,6 +288,8 @@ export function deleteRoutine(routineId) {
       document.getElementById("routine-input").value = appState.rawRoutine;
       appState.currentTaskIndex = 0;
       appState.currentSubRoutineIndex = 0;
+      appState.currentQueueIndex = 0;
+      appState.queue = [];
       parseAndRender();
     }
     closeRoutineEditor();
@@ -321,7 +323,9 @@ export function switchToRoutine(routineId) {
   appState.rawRoutine = routine.content;
   appState.currentTaskIndex = 0;
   appState.currentSubRoutineIndex = 0;
+  appState.currentQueueIndex = 0;
   appState.celebrationShown = false;
+  appState.queue = [];
   document.getElementById("routine-input").value = appState.rawRoutine;
   renderRoutineList();
   updateActiveRoutineDisplay();

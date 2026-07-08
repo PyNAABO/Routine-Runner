@@ -8,20 +8,21 @@ export async function saveStateToCloud() {
   fb.isSaving = true;
   showSyncStatus("Saving...", "blue");
   try {
-    await setDoc(
-      doc(fb.db, "users", fb.user.uid),
-      {
-        routines: appState.routines,
-        activeRoutineId: appState.activeRoutineId,
-        rawRoutine: appState.rawRoutine,
-        currentTaskIndex: appState.currentTaskIndex,
-        currentSubRoutineIndex: appState.currentSubRoutineIndex,
-        history: appState.history,
-        settings: appState.settings,
-        lastUpdated: Date.now(),
-      },
-      { merge: true },
-    );
+    const data = {
+      routines: appState.routines,
+      activeRoutineId: appState.activeRoutineId,
+      rawRoutine: appState.rawRoutine,
+      currentTaskIndex: appState.currentTaskIndex,
+      currentSubRoutineIndex: appState.currentSubRoutineIndex,
+      history: appState.history,
+      settings: appState.settings,
+      queue: appState.queue,
+      quickTasks: appState.quickTasks,
+      currentQueueIndex: appState.currentQueueIndex,
+      queueLastBuiltDate: appState.queueLastBuiltDate,
+      lastUpdated: Date.now(),
+    };
+    await setDoc(doc(fb.db, "users", fb.user.uid), data, { merge: true });
     showSyncStatus("Synced", "emerald");
   } catch (e) {
     showSyncStatus("Error!", "red");

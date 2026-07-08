@@ -1,13 +1,20 @@
 import { appState, display } from "./state.js";
 import { getNextOccurrence, formatTime, updateTimerDisplay } from "./utils.js";
-import { parseRoutine } from "./parser.js";
 import { fetchPrayerTimes, getPrayerTime } from "./prayer.js";
 import { startCountDown, setControlsState, clearTimer, setTimerInterval, updatePauseBtn } from "./timer.js";
 import { startAlarmLoop, stopAlarm, sendNotification } from "./media.js";
 import { saveStateToCloud } from "./cloud.js";
+import {
+  buildQueue,
+  getCurrentTask,
+  getPendingTasks,
+  completeCurrentTask,
+  startPendingWatcher,
+  renderPendingStrip,
+} from "./queue.js";
 
 export function logTask(status) {
-  const task = appState.tasks[appState.currentTaskIndex];
+  const task = getCurrentTask();
   if (!task) return;
   let logText = task.text;
   if (task.isSubRoutineParent && task.subRoutines.length > 0) {
@@ -26,8 +33,7 @@ export function logTask(status) {
 export function triggerCompletion() {
   if (appState.settings.autoAdvance) {
     logTask("auto-done");
-    appState.currentTaskIndex++;
-    saveStateToCloud();
+    completeCurrentTask();
     parseAndRender();
   } else {
     startAlarmLoop();
@@ -43,26 +49,31 @@ export function parseAndRender() {
     container.classList.add("slide-in-right");
   }
 
-  appState.tasks = parseRoutine(appState.rawRoutine);
+  buildQueue(false);
+  startPendingWatcher();
   setControlsState(true);
   stopAlarm();
   clearTimer();
 
-  if (appState.currentTaskIndex < 0) appState.currentTaskIndex = 0;
+  const pending = getPendingTasks();
+  const allCompleted = appState.queue.length > 0 &&
+    appState.queue.every(function(q) { return q.status === "completed"; });
 
-  if (appState.tasks.length === 0) {
+  if (appState.queue.length === 0) {
     document.getElementById("empty-state").classList.remove("hidden");
     document.getElementById("active-task-container").classList.add("hidden");
     document.getElementById("all-done-state").classList.add("hidden");
     display.subRoutineIndicator.classList.add("hidden");
+    renderPendingStrip();
     return;
   }
 
-  if (appState.currentTaskIndex >= appState.tasks.length) {
+  if (allCompleted && pending.length === 0) {
     document.getElementById("active-task-container").classList.add("hidden");
-    document.getElementById("all-done-state").classList.remove("hidden");
     document.getElementById("empty-state").classList.add("hidden");
+    document.getElementById("all-done-state").classList.remove("hidden");
     display.subRoutineIndicator.classList.add("hidden");
+    document.getElementById("pending-remaining-msg")?.classList.add("hidden");
 
     if (!appState.celebrationShown) {
       appState.celebrationShown = true;
@@ -71,20 +82,34 @@ export function parseAndRender() {
       }
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
     }
+    renderPendingStrip();
+    return;
+  }
+
+  if (allCompleted && pending.length > 0) {
+    document.getElementById("active-task-container").classList.add("hidden");
+    document.getElementById("empty-state").classList.add("hidden");
+    document.getElementById("all-done-state").classList.add("hidden");
+    document.getElementById("pending-remaining-msg")?.classList.remove("hidden");
+    renderPendingStrip();
     return;
   }
 
   document.getElementById("empty-state").classList.add("hidden");
   document.getElementById("all-done-state").classList.add("hidden");
   document.getElementById("active-task-container").classList.remove("hidden");
+  document.getElementById("pending-remaining-msg")?.classList.add("hidden");
 
-  const task = appState.tasks[appState.currentTaskIndex];
-  const nextTask = appState.tasks[appState.currentTaskIndex + 1];
+  const task = getCurrentTask();
+  if (!task) return;
+
+  const nextIdx = appState.currentQueueIndex + 1;
+  const nextTask = nextIdx < appState.queue.length ? appState.queue[nextIdx] : null;
 
   let displayTask = task;
   let isInSubRoutine = false;
 
-  if (task.isSubRoutineParent && task.subRoutines.length > 0) {
+  if (task.isSubRoutineParent && task.subRoutines.length > 0 && task.source === "routine") {
     isInSubRoutine = true;
     if (appState.currentSubRoutineIndex >= task.subRoutines.length) {
       appState.currentSubRoutineIndex = 0;
@@ -125,11 +150,22 @@ export function parseAndRender() {
   if (displayTask.isHigh) display.taskCard.classList.add("priority-glow");
   else display.taskCard.classList.remove("priority-glow");
 
-  display.globalProgress.style.width = `${(appState.currentTaskIndex / Math.max(1, appState.tasks.length - 1)) * 100}%`;
+  const completedCount = appState.queue.filter(function(q) { return q.status === "completed"; }).length;
+  display.globalProgress.style.width = `${(completedCount / Math.max(1, appState.queue.length - 1)) * 100}%`;
+
+  if (task.source === "quick") {
+    display.taskCard.classList.add("task-card-quick");
+    display.globalProgress.classList.add("task-card-quick");
+  } else {
+    display.taskCard.classList.remove("task-card-quick");
+    display.globalProgress.classList.remove("task-card-quick");
+  }
 
   display.waitOverlay.classList.add("hidden");
   display.timerBox.classList.add("hidden");
   document.getElementById("timer-controls").classList.add("hidden");
+
+  renderPendingStrip();
 
   handleTaskLogic(displayTask).catch((err) => {
     console.error("Error handling task logic:", err);

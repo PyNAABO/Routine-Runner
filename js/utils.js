@@ -30,13 +30,21 @@ export function safeAsync(fn) {
 }
 
 export function isModalOpen() {
+  const extraModals = [
+    "quick-edit-modal",
+    "quick-add-modal",
+    "reschedule-modal",
+    "queue-panel",
+  ];
+  for (let i = 0; i < extraModals.length; i++) {
+    if (!document.getElementById(extraModals[i]).classList.contains("hidden")) return true;
+  }
   return (
     !views.settings.classList.contains("translate-x-full") ||
     !views.edit.classList.contains("translate-x-full") ||
     !views.manageRoutines.classList.contains("translate-x-full") ||
     !views.routineEditor.classList.contains("hidden") ||
-    !views.logs.classList.contains("hidden") ||
-    !document.getElementById("quick-edit-modal").classList.contains("hidden")
+    !views.logs.classList.contains("hidden")
   );
 }
 

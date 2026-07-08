@@ -84,6 +84,10 @@ function initFirestoreListener() {
         appState.currentTaskIndex = data.currentTaskIndex || 0;
         appState.currentSubRoutineIndex = data.currentSubRoutineIndex || 0;
         appState.history = data.history || {};
+        appState.queue = data.queue || [];
+        appState.quickTasks = data.quickTasks || [];
+        appState.currentQueueIndex = data.currentQueueIndex || 0;
+        appState.queueLastBuiltDate = data.queueLastBuiltDate || null;
 
         if (data.settings) {
           const localPrefs = {

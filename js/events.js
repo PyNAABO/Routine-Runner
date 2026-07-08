@@ -15,10 +15,27 @@ import {
   loadExampleRoutine,
 } from "./routines.js";
 import { parseAndRender, logTask } from "./renderer.js";
-import { parseRoutine } from "./parser.js";
 import { fetchPrayerTimes, validatePrayerName, savePrayerLocation } from "./prayer.js";
 import { setControlsState, clearTimer, togglePause } from "./timer.js";
 import { stopAlarm, requestWakeLock, releaseWakeLock } from "./media.js";
+import {
+  getCurrentTask,
+  completeCurrentTask,
+  skipCurrentTask,
+  undoLastTask,
+  snoozeTask,
+  rescheduleToDate,
+  resetQueue,
+  openQueuePanel,
+  closeQueuePanel,
+  showQuickAddForm,
+  hideQuickAddForm,
+  submitQuickAdd,
+  showRescheduleDialog,
+  hideRescheduleDialog,
+  renderQueueList,
+  getPendingTasks,
+} from "./queue.js";
 
 const onClick = (id, fn) => {
   const el = document.getElementById(id);
@@ -88,6 +105,9 @@ export function setupEventListeners() {
       views.routineEditor.classList.add("hidden");
       views.logs.classList.add("hidden");
       document.getElementById("quick-edit-modal").classList.add("hidden");
+      document.getElementById("quick-add-modal").classList.add("hidden");
+      document.getElementById("reschedule-modal").classList.add("hidden");
+      closeQueuePanel();
       return;
     }
     if (isModalOpen()) return;
@@ -152,68 +172,42 @@ export function setupEventListeners() {
     const activeRoutine = getActiveRoutine();
     if (activeRoutine) activeRoutine.content = appState.rawRoutine;
 
-    const newTasks = parseRoutine(appState.rawRoutine);
-    if (appState.currentTaskIndex >= newTasks.length) {
-      appState.currentTaskIndex = 0;
-      appState.currentSubRoutineIndex = 0;
-    }
+    appState.currentTaskIndex = 0;
+    appState.currentSubRoutineIndex = 0;
+    appState.currentQueueIndex = 0;
+    appState.celebrationShown = false;
+    appState.queue = [];
     saveStateToCloud();
     views.edit.classList.add("translate-x-full");
     parseAndRender();
   });
 
   onClick("done-btn", () => {
-    const task = appState.tasks[appState.currentTaskIndex];
-    if (task && task.isSubRoutineParent && task.subRoutines.length > 0) {
-      if (appState.currentSubRoutineIndex < task.subRoutines.length - 1) {
-        logTask("done");
-        appState.currentSubRoutineIndex++;
-      } else {
-        logTask("done");
-        appState.currentSubRoutineIndex = 0;
-        appState.currentTaskIndex++;
-      }
-    } else {
-      logTask("done");
-      appState.currentTaskIndex++;
-    }
+    logTask("done");
     triggerHaptic("medium");
-    saveStateToCloud();
+    completeCurrentTask();
     parseAndRender();
   });
 
   onClick("skip-btn", () => {
-    const task = appState.tasks[appState.currentTaskIndex];
-    if (task && task.isSubRoutineParent && task.subRoutines.length > 0) {
-      if (appState.currentSubRoutineIndex < task.subRoutines.length - 1) {
-        logTask("skipped");
-        appState.currentSubRoutineIndex++;
-      } else {
-        logTask("skipped");
-        appState.currentSubRoutineIndex = 0;
-        appState.currentTaskIndex++;
-      }
-    } else {
-      logTask("skipped");
-      appState.currentTaskIndex++;
+    const task = getCurrentTask();
+    if (task && task.source === "quick") {
+      showRescheduleDialog();
+      return;
     }
+    logTask("skipped");
     triggerHaptic("medium");
-    saveStateToCloud();
+    skipCurrentTask();
     parseAndRender();
   });
 
   onClick("undo-btn", () => {
-    const task = appState.tasks[appState.currentTaskIndex];
-    if (task && task.isSubRoutineParent && task.subRoutines.length > 0 && appState.currentSubRoutineIndex > 0) {
+    const task = getCurrentTask();
+    if (task && task.isSubRoutineParent && task.subRoutines.length > 0 && appState.currentSubRoutineIndex > 0 && task.source === "routine") {
       appState.currentSubRoutineIndex--;
-    } else if (appState.currentTaskIndex > 0) {
-      appState.currentTaskIndex--;
-      const prevTask = appState.tasks[appState.currentTaskIndex];
-      if (prevTask && prevTask.isSubRoutineParent && prevTask.subRoutines.length > 0) {
-        appState.currentSubRoutineIndex = prevTask.subRoutines.length - 1;
-      }
+    } else if (appState.currentQueueIndex > 0) {
+      undoLastTask();
     }
-    saveStateToCloud();
     parseAndRender();
   });
 
@@ -222,7 +216,8 @@ export function setupEventListeners() {
     if (confirm("Restart day?")) {
       appState.currentTaskIndex = 0;
       appState.currentSubRoutineIndex = 0;
-      saveStateToCloud();
+      appState.celebrationShown = false;
+      resetQueue();
       parseAndRender();
       views.settings.classList.add("translate-x-full");
     }
@@ -320,8 +315,8 @@ export function setupEventListeners() {
 
   // QUICK EDIT
   onClick("quick-edit-btn", () => {
-    const task = appState.tasks[appState.currentTaskIndex];
-    if (task) {
+    const task = getCurrentTask();
+    if (task && task.source === "routine") {
       document.getElementById("quick-edit-input").value = task.raw;
       const isConditional = /^IF:/i.test(task.raw.trim());
       document.getElementById("quick-edit-warning").classList.toggle("hidden", !isConditional);
@@ -333,18 +328,92 @@ export function setupEventListeners() {
   );
   onClick("save-quick-edit", () => {
     const newVal = document.getElementById("quick-edit-input").value;
-    const task = appState.tasks[appState.currentTaskIndex];
-    if (!task) return;
+    const task = getCurrentTask();
+    if (!task || task.source !== "routine") return;
     const taskID = task.id;
     const lines = appState.rawRoutine.split("\n");
-    if (lines[taskID] !== undefined) {
-      lines[taskID] = newVal;
+    const routineIdx = parseInt(taskID.replace("routine-", ""));
+    if (!isNaN(routineIdx) && lines[routineIdx] !== undefined) {
+      lines[routineIdx] = newVal;
       appState.rawRoutine = lines.join("\n");
       const activeRoutine = getActiveRoutine();
       if (activeRoutine) activeRoutine.content = appState.rawRoutine;
+      appState.queue = [];
       saveStateToCloud();
       document.getElementById("quick-edit-modal").classList.add("hidden");
       parseAndRender();
+    }
+  });
+
+  // QUEUE PANEL
+  onClick("queue-btn", openQueuePanel);
+  onClick("queue-overlay", closeQueuePanel);
+  onClick("close-queue-btn", closeQueuePanel);
+
+  // QUICK ADD
+  onClick("quick-add-open-btn", showQuickAddForm);
+  onClick("cancel-quick-add-btn", hideQuickAddForm);
+  onClick("submit-quick-add-btn", submitQuickAdd);
+
+  // RESCHEDULE DIALOG
+  onClick("cancel-reschedule-btn", hideRescheduleDialog);
+  onClick("reschedule-snooze-15", () => {
+    snoozeTask(Date.now() + 15 * 60 * 1000);
+    hideRescheduleDialog();
+    parseAndRender();
+  });
+  onClick("reschedule-snooze-30", () => {
+    snoozeTask(Date.now() + 30 * 60 * 1000);
+    hideRescheduleDialog();
+    parseAndRender();
+  });
+  onClick("reschedule-snooze-60", () => {
+    snoozeTask(Date.now() + 60 * 60 * 1000);
+    hideRescheduleDialog();
+    parseAndRender();
+  });
+  onClick("reschedule-tomorrow", () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.getFullYear() + "-" +
+      String(tomorrow.getMonth() + 1).padStart(2, "0") + "-" +
+      String(tomorrow.getDate()).padStart(2, "0");
+    rescheduleToDate(dateStr);
+    hideRescheduleDialog();
+    parseAndRender();
+  });
+  onClick("reschedule-at-time-btn", () => {
+    const timeInput = document.getElementById("reschedule-time-input");
+    if (!timeInput || !timeInput.value) return;
+    const parts = timeInput.value.split(":");
+    if (parts.length !== 2) return;
+    const h = parseInt(parts[0]);
+    const m = parseInt(parts[1]);
+    if (isNaN(h) || isNaN(m)) return;
+    const target = new Date();
+    target.setHours(h, m, 0, 0);
+    if (target <= new Date()) target.setDate(target.getDate() + 1);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    if (target >= tomorrow) {
+      const dateStr = target.getFullYear() + "-" +
+        String(target.getMonth() + 1).padStart(2, "0") + "-" +
+        String(target.getDate()).padStart(2, "0");
+      rescheduleToDate(dateStr);
+    } else {
+      snoozeTask(target.getTime());
+    }
+    hideRescheduleDialog();
+    parseAndRender();
+  });
+
+  // RESET QUEUE
+  onClick("reset-queue-btn", () => {
+    if (confirm("Remove all quick tasks and reset to original routine order?")) {
+      resetQueue();
+      parseAndRender();
+      closeQueuePanel();
     }
   });
 }

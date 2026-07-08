@@ -734,19 +734,37 @@
                 <p class="text-muted-custom mt-2">Discipline is freedom.</p>
               </div>
 
+              <!-- Pending remaining message (when routine done but pending tasks exist) -->
+              <div id="pending-remaining-msg" class="text-center hidden">
+                <i class="fas fa-clock text-4xl text-amber-500 mb-3"></i>
+                <h2 class="text-xl font-bold">Routine Complete</h2>
+                <p class="text-muted-custom mt-1 text-sm">
+                  Pending tasks remaining in the strip below.
+                </p>
+              </div>
+
               <!-- Active Task Card -->
               <div
                 id="active-task-container"
                 class="w-full max-w-md flex flex-col gap-6 hidden"
               >
-                <!-- Progress -->
-                <div
-                  class="w-full bg-card-custom border border-custom h-1.5 rounded-full overflow-hidden shrink-0"
-                >
+                <!-- Progress + Queue button -->
+                <div class="flex items-center gap-2">
                   <div
-                    id="global-progress"
-                    class="bg-blue-500 h-full w-0 transition-all duration-500"
-                  ></div>
+                    class="flex-1 bg-card-custom border border-custom h-1.5 rounded-full overflow-hidden shrink-0"
+                  >
+                    <div
+                      id="global-progress"
+                      class="bg-blue-500 h-full w-0 transition-all duration-500"
+                    ></div>
+                  </div>
+                  <button
+                    id="queue-btn"
+                    class="shrink-0 text-muted-custom hover:text-blue-400 transition text-sm px-2 py-1 rounded-lg border border-custom hover:border-blue-500/50"
+                    title="Manage Queue"
+                  >
+                    <i class="fas fa-list"></i>
+                  </button>
                 </div>
 
                 <!-- Main Card -->
@@ -848,6 +866,19 @@
                   </p>
                   <p id="next-task-text" class="font-medium truncate">...</p>
                 </div>
+
+                <!-- Pending Strip -->
+                <div id="pending-strip" class="hidden">
+                  <p
+                    class="text-[10px] text-amber-500/70 uppercase tracking-widest mb-2 text-center font-medium"
+                  >
+                    Pending
+                  </p>
+                  <div
+                    class="flex gap-2 overflow-x-auto pb-1 scroll-touch"
+                    id="pending-strip-inner"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
@@ -937,6 +968,178 @@
             Update
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Queue Panel -->
+    <div
+      id="queue-overlay"
+      class="fixed inset-0 bg-black/60 z-50 hidden"
+    ></div>
+    <div
+      id="queue-panel"
+      class="fixed bottom-0 left-0 right-0 z-50 bg-card-custom border-t border-custom rounded-t-2xl max-h-[70vh] flex flex-col hidden transform transition-transform duration-300"
+    >
+      <div class="flex justify-between items-center p-4 border-b border-custom shrink-0">
+        <h2 class="text-lg font-bold flex items-center gap-2">
+          <i class="fas fa-list text-blue-400"></i> Task Queue
+          <span
+            id="queue-count"
+            class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"
+          ></span>
+        </h2>
+        <div class="flex items-center gap-2">
+          <button
+            id="reset-queue-btn"
+            class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-400/30 hover:border-red-400/50"
+            title="Reset to original order"
+          >
+            <i class="fas fa-undo-alt"></i> Reset
+          </button>
+          <button
+            id="close-queue-btn"
+            class="text-muted-custom hover:text-white p-1"
+          >
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="queue-list"
+        class="flex-1 overflow-y-auto p-4 space-y-2 scroll-touch"
+      ></div>
+
+      <div class="p-4 border-t border-custom shrink-0">
+        <button
+          id="quick-add-open-btn"
+          class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
+        >
+          <i class="fas fa-plus"></i> Add Quick Task
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Add Modal -->
+    <div
+      id="quick-add-modal"
+      class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-card-custom border border-custom w-full max-w-sm rounded-xl p-4 shadow-2xl"
+      >
+        <h3 class="font-bold mb-4 flex items-center gap-2">
+          <i class="fas fa-bolt text-amber-400"></i> Add Quick Task
+        </h3>
+
+        <label class="block text-xs text-muted-custom uppercase tracking-wider mb-1"
+          >Task</label
+        >
+        <input
+          type="text"
+          id="quick-add-name"
+          class="w-full bg-body text-main p-3 rounded-lg border border-custom focus:border-amber-500 outline-none mb-3"
+          placeholder="e.g., Read Quran"
+        />
+
+        <label class="block text-xs text-muted-custom uppercase tracking-wider mb-1"
+          >Timer (optional, minutes)</label
+        >
+        <input
+          type="number"
+          id="quick-add-duration"
+          class="w-full bg-body text-main p-3 rounded-lg border border-custom focus:border-amber-500 outline-none mb-3"
+          placeholder="e.g., 15"
+          min="0"
+        />
+
+        <label class="block text-xs text-muted-custom uppercase tracking-wider mb-1"
+          >Insert position</label
+        >
+        <select
+          id="quick-add-position"
+          class="w-full bg-body text-main p-3 rounded-lg border border-custom focus:border-amber-500 outline-none mb-4"
+        ></select>
+
+        <div class="flex justify-end gap-3">
+          <button
+            id="cancel-quick-add-btn"
+            class="px-4 py-2 text-muted-custom hover:text-white"
+          >
+            Cancel
+          </button>
+          <button
+            id="submit-quick-add-btn"
+            class="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold"
+          >
+            Add Task
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reschedule Dialog -->
+    <div
+      id="reschedule-modal"
+      class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-card-custom border border-custom w-full max-w-sm rounded-xl p-4 shadow-2xl"
+      >
+        <h3 class="font-bold mb-1 flex items-center gap-2">
+          <i class="fas fa-clock text-amber-400"></i> Reschedule Task
+        </h3>
+        <p class="text-xs text-muted-custom mb-4">
+          When should this task come back?
+        </p>
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <button
+            id="reschedule-snooze-15"
+            class="py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm"
+          >
+            Snooze 15m
+          </button>
+          <button
+            id="reschedule-snooze-30"
+            class="py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm"
+          >
+            Snooze 30m
+          </button>
+          <button
+            id="reschedule-snooze-60"
+            class="py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm"
+          >
+            Snooze 1h
+          </button>
+          <button
+            id="reschedule-tomorrow"
+            class="py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm"
+          >
+            Tomorrow
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 mb-4">
+          <input
+            type="time"
+            id="reschedule-time-input"
+            class="flex-1 bg-body text-main p-3 rounded-lg border border-custom focus:border-amber-500 outline-none"
+          />
+          <button
+            id="reschedule-at-time-btn"
+            class="px-4 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium text-sm"
+          >
+            At Time
+          </button>
+        </div>
+
+        <button
+          id="cancel-reschedule-btn"
+          class="w-full py-2 text-muted-custom hover:text-white text-sm"
+        >
+          Cancel (don't reschedule)
+        </button>
       </div>
     </div>
 

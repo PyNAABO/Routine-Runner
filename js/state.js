@@ -71,4 +71,9 @@ export const appState = {
   prayerTimesDate: null,
   isPaused: false,
   celebrationShown: false,
+  queue: [],
+  quickTasks: [],
+  currentQueueIndex: 0,
+  pendingInterval: null,
+  queueLastBuiltDate: null,
 };
