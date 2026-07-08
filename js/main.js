@@ -10,7 +10,12 @@ import { adjustTimer } from "./timer.js";
 function init() {
   if ("serviceWorker" in navigator &&
       (location.protocol === "http:" || location.protocol === "https:")) {
-    navigator.serviceWorker.register("sw.js").catch(console.error);
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      reg.update();
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        location.reload();
+      });
+    }).catch(console.error);
   }
 
   window.addEventListener("online", () => { fb.isOnline = true; });

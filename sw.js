@@ -1,4 +1,4 @@
-const CACHE_NAME = "routine-runner-v12";
+const CACHE_NAME = "rr-20260708-204232";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
+  self.skipWaiting();
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
