@@ -1,4 +1,4 @@
-const CACHE_NAME = "routine-runner-v11";
+const CACHE_NAME = "routine-runner-v12";
 const ASSETS = [
   "./",
   "./index.html",
@@ -64,6 +64,23 @@ self.addEventListener("fetch", (e) => {
 
   // index.html: Network First (always get latest), fallback to cache
   if (url.pathname === "/" || url.pathname.endsWith("index.html")) {
+    e.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        try {
+          const fetched = await fetch(e.request);
+          cache.put(e.request, fetched.clone());
+          return fetched;
+        } catch (err) {
+          const cached = await cache.match(e.request);
+          return cached || new Response("Offline", { status: 503 });
+        }
+      }),
+    );
+    return;
+  }
+
+  // Local JS/CSS: Network First, fallback to cache
+  if (url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
     e.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         try {
