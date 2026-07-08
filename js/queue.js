@@ -569,10 +569,6 @@ export function renderPendingStrip() {
     });
 
     inner.appendChild(chip);
-  });
-}
-
-    container.appendChild(chip);
   }
 }
 
