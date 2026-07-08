@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import {
   getAuth,
   signInWithPopup,
+  signInAnonymously,
   GoogleAuthProvider,
   onAuthStateChanged,
   signOut,
@@ -27,7 +28,7 @@ import {
 import { parseAndRender } from "./renderer.js";
 import { requestWakeLock } from "./media.js";
 
-export { signInWithPopup, GoogleAuthProvider, signOut };
+export { signInWithPopup, signInAnonymously, GoogleAuthProvider, signOut };
 
 export function initFirebase(config) {
   try {

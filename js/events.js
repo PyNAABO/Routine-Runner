@@ -2,7 +2,7 @@ import { appState, fb, views, inputs, display, toggles } from "./state.js";
 import { triggerHaptic, isModalOpen } from "./utils.js";
 import { saveStateToCloud } from "./cloud.js";
 import { applySettings } from "./settings.js";
-import { signInWithPopup, GoogleAuthProvider, signOut } from "./firebase.js";
+import { signInWithPopup, signInAnonymously, GoogleAuthProvider, signOut } from "./firebase.js";
 import {
   renderRoutineList,
   openRoutineEditor,
@@ -309,6 +309,22 @@ export function setupEventListeners() {
   onClick("google-login-btn", () =>
     signInWithPopup(fb.auth, new GoogleAuthProvider()).catch((e) => alert(e.message)),
   );
+  onClick("guest-login-btn", async () => {
+    const btn = document.getElementById("guest-login-btn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+    try {
+      await signInAnonymously(fb.auth);
+    } catch (e) {
+      if (e.code === "auth/operation-not-allowed") {
+        alert("Anonymous auth is not enabled. Go to Firebase Console → Authentication → Sign-in method → enable Anonymous.");
+      } else {
+        alert(e.message);
+      }
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-user-secret text-amber-400"></i> Continue as Guest';
+    }
+  });
   onClick("settings-logout-btn", () => {
     if (confirm("Sign out?")) signOut(fb.auth);
   });
