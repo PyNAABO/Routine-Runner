@@ -7,7 +7,7 @@ export function applySettings() {
     document.getElementById("theme-color-meta").content = "#0f172a";
   } else {
     document.body.classList.add("light-mode");
-    document.getElementById("theme-color-meta").content = "#f1f5f9";
+    document.getElementById("theme-color-meta").content = "#f0f4f8";
   }
   toggles.theme.checked = appState.settings.darkMode;
   toggles.autoAdvance.checked = appState.settings.autoAdvance;
